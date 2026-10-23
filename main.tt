@@ -1,0 +1,34 @@
+## A example of the Teller script
+
+`workspace.start
+
+    # Step 1: Initialize player and enemy data
+    store.var {
+        var("player") = "ShadowKnight"
+        var("player_hp") = 100
+        var("coins") = 40
+        var("enemy") = "Goblin"
+        var("enemy_hp") = 30
+    }
+    block[1]
+
+    # Step 2: Combat phase - player strikes enemy
+    load(enemy_hp) : sub(30)
+    system.console()
+    output(text.string) {
+        text.print("__player__ strikes the __enemy__ for 30 damage!")
+    }
+    block[2]
+
+    # Step 3: Check if enemy is defeated
+    if enemy_hp <= 0 then
+        # Reward victory gold
+        load(coins) : add(50)
+        system.console()
+        output(text.string) {
+            text.print("The __enemy__ was defeated! Total coins now: "__coins__" Gold!")
+        }
+    end
+    block[3]
+
+workspace.end`
