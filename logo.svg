@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <!-- Rich Red Background Square (Matches JS Icon Style but Red) -->
+  <rect x="0" y="0" width="400" height="400" rx="20" ry="20" fill="#cc1414" />
+
+  <!-- The "TT" Letters in the Bottom Right -->
+  <g fill="#ffffff">
+    <!-- First 'T' -->
+    <!-- Top Bar of T -->
+    <rect x="175" y="200" width="85" height="30" rx="3" />
+    <!-- Vertical Stem of T -->
+    <rect x="202.5" y="230" width="30" height="120" rx="3" />
+
+    <!-- Second 'T' -->
+    <!-- Top Bar of T -->
+    <rect x="275" y="200" width="85" height="30" rx="3" />
+    <!-- Vertical Stem of T -->
+    <rect x="302.5" y="230" width="30" height="120" rx="3" />
+  </g>
+</svg>
