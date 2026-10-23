@@ -86,7 +86,7 @@ SYMBOLS
  `:`   (Link / And)      Chains two actions on one line
                         Example: load(Coins) : add(25)
 
-  |(*)` (Mandatory)       Field must be filled; cannot be blank
+  `(*)` (Mandatory)       Field must be filled; cannot be blank
                         Example: string1(*)
 
   `__`  (Double Under)    Wraps a saved variable to display in text
