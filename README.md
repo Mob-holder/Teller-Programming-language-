@@ -72,7 +72,7 @@ SYMBOLS
   `>=`  (Greater / Equal) Bigger than or exact match
                         Example: if Coins `>=` 100 then
 
-  |<=`  (Less / Equal)    Smaller than or exact match
+  `<=`  (Less / Equal)    Smaller than or exact match
                         Example: if Health <= 0 then
 
   `==`  (Exact Match)     Checks if both sides are strictly identical
