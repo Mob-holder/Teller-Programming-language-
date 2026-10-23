@@ -2,7 +2,7 @@ import sys
 import re
 
 def emit_diagnostic(filename, line_no, raw_line, col_start, error_type, message, note=None):
-    """Formats professional Clang/Python-style error diagnostics with line previews and carets."""
+    """Outputs Clang/Python-style diagnostics with line excerpts, column tracking, and carets."""
     col = max(1, col_start)
     caret_indent = " " * (col - 1)
     
@@ -27,62 +27,89 @@ def run_teller(filename):
         sys.exit(1)
 
     variables = {}
-    active_condition = True
     condition_stack = []
+    active_condition = True
     workspace_begun = False
     workspace_ended = False
+    expected_block = 1
 
     for line_idx, raw_line in enumerate(lines, start=1):
         stripped = raw_line.strip()
 
-        # Discard whitespace-only lines and full comment lines
+        # Skip blank lines and comments
         if not stripped or stripped.startswith("#"):
             continue
 
-        # ---------------------------------------------------------
-        # 1. SCOPE VALIDATION (workspace.start / workspace.end)
-        # ---------------------------------------------------------
+        # Check for unresolved mandatory placeholder symbol (*)
+        if "(*)" in stripped:
+            col = raw_line.find("(*)") + 1
+            emit_diagnostic(
+                filename, line_idx, raw_line, col,
+                "SyntaxError", "mandatory parameter '(*)' was left unfilled",
+                "note: replace '(*)' with a valid identifier, literal, or expression."
+            )
+
+        # -------------------------------------------------------------
+        # 1. SCOPE VALIDATION (workspace.start & workspace.end)
+        # -------------------------------------------------------------
         if stripped == "workspace.start":
             if workspace_begun:
+                col = raw_line.find("workspace.start") + 1
                 emit_diagnostic(
-                    filename, line_idx, raw_line, raw_line.find("workspace.start") + 1,
+                    filename, line_idx, raw_line, col,
                     "ScopeError", "redefinition of active workspace session",
-                    "note: 'workspace.start' was already initialized."
+                    "note: 'workspace.start' is already declared and running."
                 )
             workspace_begun = True
             continue
 
         if not workspace_begun:
-            first_token = stripped.split()[0]
-            col = raw_line.find(first_token) + 1
+            first_tok = stripped.split()[0]
+            col = raw_line.find(first_tok) + 1
             emit_diagnostic(
                 filename, line_idx, raw_line, col,
-                "SyntaxError", f"unexpected token '{first_token}' outside workspace scope",
-                "note: source entry requires 'workspace.start' before declaring statements."
+                "SyntaxError", f"unexpected token '{first_tok}' before workspace entry",
+                "note: line 1 must begin with 'workspace.start' to turn the code ON."
             )
 
         if workspace_ended:
-            first_token = stripped.split()[0]
-            col = raw_line.find(first_token) + 1
+            first_tok = stripped.split()[0]
+            col = raw_line.find(first_tok) + 1
             emit_diagnostic(
                 filename, line_idx, raw_line, col,
-                "ScopeError", f"code declared after workspace termination",
-                "note: all expressions must reside prior to 'workspace.end'."
+                "ScopeError", f"code statement found after workspace termination",
+                "note: no statements are permitted after 'workspace.end'."
             )
 
         if stripped == "workspace.end":
             workspace_ended = True
             continue
 
-        # ---------------------------------------------------------
-        # 2. VARIABLE STORAGE SCOPES (store.var { ... })
-        # ---------------------------------------------------------
+        # -------------------------------------------------------------
+        # 2. MEMORY BLOCK CHECKPOINTS (block[1], block[2], ...)
+        # -------------------------------------------------------------
+        block_match = re.fullmatch(r"block\[(\d+)\]", stripped)
+        if block_match:
+            step_num = int(block_match.group(1))
+            if step_num != expected_block:
+                col = raw_line.find("block[") + 1
+                emit_diagnostic(
+                    filename, line_idx, raw_line, col,
+                    "SequenceError", f"expected checkpoint 'block[{expected_block}]', but found 'block[{step_num}]'",
+                    "note: memory slots must increment sequentially according to step count."
+                )
+            expected_block += 1
+            continue
+
+        # -------------------------------------------------------------
+        # 3. VARIABLE STORAGE ROOM (store.var { ... })
+        # -------------------------------------------------------------
         if stripped.startswith("store.var"):
             if "{" not in stripped:
                 col = raw_line.find("store.var") + len("store.var") + 1
                 emit_diagnostic(
                     filename, line_idx, raw_line, col,
-                    "SyntaxError", "expected '{' following block scope declaration",
+                    "SyntaxError", "expected scope room '{' following 'store.var'",
                     "syntax: store.var { ... }"
                 )
             continue
@@ -95,7 +122,7 @@ def run_teller(filename):
                 col = raw_line.find("var(") + 1
                 emit_diagnostic(
                     filename, line_idx, raw_line, col,
-                    "SyntaxError", "expected assignment operator '=' in variable declaration"
+                    "SyntaxError", "expected assignment '=' in variable definition"
                 )
 
             var_match = re.search(r'var\("([^"]+)"\)\s*=\s*(.+)', stripped)
@@ -103,21 +130,36 @@ def run_teller(filename):
                 col = raw_line.find("var(") + 1
                 emit_diagnostic(
                     filename, line_idx, raw_line, col,
-                    "SyntaxError", "invalid variable definition syntax",
-                    "syntax: var(\"identifier\") = <literal>"
+                    "SyntaxError", "malformed variable declaration syntax",
+                    "syntax: var(\"identifier\") = <value>"
                 )
 
-            ident, raw_val = var_match.groups()
-            raw_val = raw_val.strip().strip('"').strip("'")
-            if raw_val.isdigit():
-                variables[ident] = int(raw_val)
+            vname, raw_expr = var_match.groups()
+            raw_expr = raw_expr.strip()
+
+            # Direct math evaluation in definition (e.g., 10 + 5, 10 - 5, 5 * 2, 10 / 2)
+            math_calc = re.match(r"^(\d+)\s*([\+\-\*\/])\s*(\d+)$", raw_expr)
+            if math_calc:
+                n1, op, n2 = math_calc.groups()
+                n1, n2 = int(n1), int(n2)
+                if op == "+": val = n1 + n2
+                elif op == "-": val = n1 - n2
+                elif op == "*": val = n1 * n2
+                elif op == "/": val = n1 // n2
+                variables[vname] = val
+            elif raw_expr.lower() == "true":
+                variables[vname] = True
+            elif raw_expr.lower() == "false":
+                variables[vname] = False
+            elif raw_expr.isdigit():
+                variables[vname] = int(raw_expr)
             else:
-                variables[ident] = raw_val
+                variables[vname] = raw_expr.strip('"').strip("'")
             continue
 
-        # ---------------------------------------------------------
-        # 3. CONTROL FLOW BRANCHING (if ... then / or if ... then / end)
-        # ---------------------------------------------------------
+        # -------------------------------------------------------------
+        # 4. CONDITIONAL BRANCHING (if ... then / or if ... then / end)
+        # -------------------------------------------------------------
         if stripped.startswith("if ") or stripped.startswith("or if "):
             if not stripped.endswith("then"):
                 col = len(raw_line.rstrip()) + 1
@@ -126,7 +168,7 @@ def run_teller(filename):
                     "SyntaxError", "expected keyword 'then' at end of condition clause"
                 )
 
-            cond_match = re.search(r'(?:if|or if)\s+([A-Za-z0-9_]+)\s*(>=|<=|>|<|==|~=)\s*([A-Za-z0-9_]+)\s*then', stripped)
+            cond_match = re.search(r'(?:if|or if)\s+([A-Za-z0-9_]+)(?:\s*(>=|<=|>|<|==|~=)\s*([A-Za-z0-9_"]+))?\s+then', stripped)
             if not cond_match:
                 col = raw_line.find("if") + 1
                 emit_diagnostic(
@@ -135,19 +177,35 @@ def run_teller(filename):
                     "valid operators: >, <, >=, <=, ==, ~="
                 )
 
-            operand_a, op, operand_b = cond_match.groups()
-            val_a = variables.get(operand_a, 0)
-            target = int(operand_b) if operand_b.isdigit() else operand_b.strip('"').strip("'")
+            target_var, op, target_val = cond_match.groups()
+            val_a = variables.get(target_var, None)
 
-            if op == ">": outcome = (val_a > target)
-            elif op == "<": outcome = (val_a < target)
-            elif op == ">=": outcome = (val_a >= target)
-            elif op == "<=": outcome = (val_a <= target)
-            elif op == "==": outcome = (val_a == target)
-            elif op == "~=": outcome = (val_a != target)
+            if val_a is None:
+                col = raw_line.find(target_var) + 1
+                emit_diagnostic(
+                    filename, line_idx, raw_line, col,
+                    "NameError", f"name '{target_var}' is not defined in active scope"
+                )
 
-            condition_stack.append(outcome)
-            active_condition = outcome
+            # Bare boolean flag check (e.g., if is_alive then)
+            if op is None and target_val is None:
+                branch_result = bool(val_a)
+            else:
+                if target_val.lower() == "true": comp = True
+                elif target_val.lower() == "false": comp = False
+                elif target_val.isdigit(): comp = int(target_val)
+                else: comp = target_val.strip('"').strip("'")
+
+                if op == ">": branch_result = (val_a > comp)
+                elif op == "<": branch_result = (val_a < comp)
+                elif op == ">=": branch_result = (val_a >= comp)
+                elif op == "<=": branch_result = (val_a <= comp)
+                elif op == "==": branch_result = (val_a == comp)
+                elif op == "~=": branch_result = (val_a != comp)
+                else: branch_result = False
+
+            condition_stack.append(branch_result)
+            active_condition = branch_result
             continue
 
         if stripped == "end":
@@ -161,43 +219,42 @@ def run_teller(filename):
             active_condition = condition_stack[-1] if condition_stack else True
             continue
 
-        # Skip execution branches when evaluating a false condition
         if not active_condition:
             continue
 
-        # ---------------------------------------------------------
-        # 4. PIPELINE OPERATOR (load(...) : action(...))
-        # ---------------------------------------------------------
+        # -------------------------------------------------------------
+        # 5. PIPELINE OPERATOR (load(...) : add/sub/mult/div(...))
+        # -------------------------------------------------------------
         if ":" in stripped:
-            link_match = re.search(r'load\(([A-Za-z0-9_]+)\)\s*:\s*(add|sub|mult|div)\(([0-9]+)\)', stripped)
-            if not link_match:
+            pipe_match = re.search(r'load\(([A-Za-z0-9_]+)\)\s*:\s*(add|sub|mult|div)\(([0-9]+)\)', stripped)
+            if not pipe_match:
                 col = raw_line.find(":") + 1
                 emit_diagnostic(
                     filename, line_idx, raw_line, col,
-                    "SyntaxError", "invalid pipeline link invocation",
-                    "expected: load(<ident>) : <action>(<value>)"
+                    "SyntaxError", "malformed pipeline link invocation",
+                    "expected: load(<var>) : <action>(<value>)"
                 )
 
-            target_var, action, step_str = link_match.groups()
-            step = int(step_str)
+            vname, act, val_str = pipe_match.groups()
+            step_val = int(val_str)
 
-            if target_var not in variables:
-                col = raw_line.find(target_var) + 1
+            if vname not in variables:
+                col = raw_line.find(vname) + 1
                 emit_diagnostic(
                     filename, line_idx, raw_line, col,
-                    "NameError", f"name '{target_var}' is not defined in active scope"
+                    "NameError", f"name '{vname}' is not defined in active scope"
                 )
 
-            if action == "add": variables[target_var] += step
-            elif action == "sub": variables[target_var] -= step
-            elif action == "mult": variables[target_var] *= step
-            elif action == "div": variables[target_var] //= step
+            if act == "add": variables[vname] += step_val
+            elif act == "sub": variables[vname] -= step_val
+            elif act == "mult": variables[vname] *= step_val
+            elif act == "div": variables[vname] //= step_val
             continue
 
-        # ---------------------------------------------------------
-        # 5. STREAM OUTPUT & SYSTEM DIRECTIVES
-        # ---------------------------------------------------------
-        if stripped in ["system.console()"] or stripped.startswith("output(") or stripped.startswith("block["):
+        # -------------------------------------------------------------
+        # 6. SYSTEM DIRECTIVES & SCREEN PRINTING
+        # -------------------------------------------------------------
+        if stripped in ["system.console()"] or stripped.startswith("output("):
             continue
 
         if "text.print" in stripped:
@@ -210,16 +267,22 @@ def run_teller(filename):
                 )
 
             raw_str = print_match.group(1).strip()
+
+            # Substitute __var__ variables
             for v_name, v_val in variables.items():
                 raw_str = raw_str.replace(f"__{v_name}__", str(v_val))
 
-            clean = raw_str.replace('"', '').replace("'", "")
-            print(clean)
+            # Substitute raw connected variables: "text"var"text" or "text" var "text"
+            for v_name, v_val in variables.items():
+                raw_str = re.sub(rf'"{re.escape(v_name)}"', str(v_val), raw_str)
+                raw_str = re.sub(rf'\b{re.escape(v_name)}\b', str(v_val), raw_str)
+
+            # Strip remaining presentation speech marks
+            clean_output = raw_str.replace('"', '').replace("'", "")
+            print(clean_output)
             continue
 
-        # ---------------------------------------------------------
-        # 6. UNRECOGNIZED INSTRUCTION / UNEXPECTED TOKEN
-        # ---------------------------------------------------------
+        # Catch-all unexpected token diagnostic
         first_token = stripped.split()[0]
         col = raw_line.find(first_token) + 1
         emit_diagnostic(
@@ -228,11 +291,14 @@ def run_teller(filename):
             "note: command not recognized by the Teller grammar engine."
         )
 
-    # File-level scope termination checks
+    # -------------------------------------------------------------
+    # FILE TERMINATION SCOPE INTEGRITY
+    # -------------------------------------------------------------
     if workspace_begun and not workspace_ended:
         emit_diagnostic(
             filename, len(lines), lines[-1] if lines else "", 1,
-            "ScopeError", "unexpected end-of-file: missing 'workspace.end'"
+            "ScopeError", "unexpected end-of-file: missing 'workspace.end'",
+            "note: every program must be turned OFF with 'workspace.end' at the very end."
         )
 
     if condition_stack:
