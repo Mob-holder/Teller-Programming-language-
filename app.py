@@ -2,6 +2,7 @@ import streamlit as st
 import subprocess
 import tempfile
 import os
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="Teller Studio IDE",
@@ -9,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Dark Studio Styling
+# Dark OneCompiler Styling
 st.markdown("""
 <style>
     .main { background-color: #0e1117; color: #c9d1d9; }
@@ -33,7 +34,7 @@ st.markdown("""
         border-top: 3px solid #cc1414;
         border-left: 1px solid #30363d;
         border-right: 1px solid #30363d;
-        padding: 7px 16px;
+        padding: 6px 14px;
         font-family: 'Courier New', monospace;
         font-size: 15px;
         font-weight: bold;
@@ -41,20 +42,11 @@ st.markdown("""
         border-radius: 6px 6px 0 0;
         margin-bottom: 0px;
     }
-    .tt-badge-icon {
-        background-color: #cc1414;
-        color: #ffffff;
-        font-weight: 900;
-        font-size: 11px;
-        padding: 2px 6px;
-        border-radius: 4px;
-        letter-spacing: 0.5px;
-    }
-    .symbol-label {
-        font-size: 12px;
-        color: #8b949e;
-        margin-top: 6px;
-        margin-bottom: 2px;
+    .tab-logo-img {
+        width: 18px;
+        height: 18px;
+        vertical-align: middle;
+        border-radius: 3px;
     }
     .terminal-box {
         background-color: #06090e;
@@ -100,8 +92,12 @@ with st.expander("📖 Teller Language Guidebook & Grammar Rules", expanded=Fals
     - **Strict Parameters:** `(*)` indicates a mandatory field; leaving it blank throws an error.
     """)
 
-# Custom Tab with main.tt followed by TT Icon Badge
-st.markdown('<div class="file-tab-custom">main.tt <span class="tt-badge-icon">TT</span></div>', unsafe_allow_html=True)
+# Custom Tab: Shows main.tt followed by your TT Icon Logo
+logo_html_img = '<span style="background:#cc1414;color:#fff;font-size:10px;padding:2px 5px;border-radius:3px;">TT</span>'
+if os.path.exists("logo.svg"):
+    logo_html_img = '<img class="tab-logo-img" src="data:image/svg+xml;utf8,' + open("logo.svg", "r", encoding="utf-8").read().replace('"', "'") + '" />'
+
+st.markdown(f'<div class="file-tab-custom">main.tt {logo_html_img}</div>', unsafe_allow_html=True)
 
 # Default Working Script
 default_script = """workspace.start
@@ -129,33 +125,147 @@ default_script = """workspace.start
 
 workspace.end"""
 
-if "source_code" not in st.session_state:
-    st.session_state["source_code"] = default_script
+# Interactive OneCompiler IDE with Native Fast Symbol Bar & Pure Teller Autocomplete
+ide_component = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ext-language_tools.js"></script>
+    <style>
+        body {{ margin: 0; background: #0e1117; font-family: sans-serif; }}
+        #editor {{
+            width: 100%;
+            height: 330px;
+            font-size: 15px;
+            border: 1px solid #30363d;
+            border-radius: 0 6px 0 0;
+        }}
+        .symbol-bar {{
+            display: flex;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-top: none;
+            padding: 6px;
+            gap: 4px;
+            overflow-x: auto;
+            border-radius: 0 0 6px 6px;
+        }}
+        .sym-btn {{
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 5px 10px;
+            font-family: monospace;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }}
+        .sym-btn:hover {{
+            background: #30363d;
+            color: #ffffff;
+            border-color: #ff2b2b;
+        }}
+    </style>
+</head>
+<body>
+    <div id="editor">{default_script}</div>
+    <div class="symbol-bar">
+        <button class="sym-btn" onclick="insertSym('\\t')">Tab</button>
+        <button class="sym-btn" onclick="insertSym(':')">:</button>
+        <button class="sym-btn" onclick="insertSym('\\"')">"</button>
+        <button class="sym-btn" onclick="insertSym('(')">(</button>
+        <button class="sym-btn" onclick="insertSym(')')">)</button>
+        <button class="sym-btn" onclick="insertSym('{{')">{{</button>
+        <button class="sym-btn" onclick="insertSym('}}')">}}</button>
+        <button class="sym-btn" onclick="insertSym('_')">_</button>
+        <button class="sym-btn" onclick="insertSym('*')">*</button>
+        <button class="sym-btn" onclick="insertSym('[')">[</button>
+        <button class="sym-btn" onclick="insertSym(']')">]</button>
+        <button class="sym-btn" onclick="insertSym('=')">=</button>
+        <button class="sym-btn" onclick="insertSym('>')">&gt;</button>
+        <button class="sym-btn" onclick="insertSym('<')">&lt;</button>
+        <button class="sym-btn" onclick="insertSym('~=')">~=</button>
+        <button class="sym-btn" onclick="insertSym('#')">#</button>
+    </div>
 
-# Code Area (Clean text area bound to state)
-user_code = st.text_area(
-    "Source Editor",
-    value=st.session_state["source_code"],
-    height=340,
-    label_visibility="collapsed",
-    key="editor_area"
-)
-st.session_state["source_code"] = user_code
+    <script>
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/tomorrow_night_eighties");
+        editor.session.setMode("ace/mode/text"); // No Ruby modes or random syntax
+        editor.setOptions({{
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: true,
+            showLineNumbers: true,
+            tabSize: 4,
+            useSoftTabs: true,
+            behavioursEnabled: true,
+            wrap: true
+        }});
 
-# Pydroid-style Quick Symbol Bar
-st.markdown('<div class="symbol-label">QUICK SYMBOLS (PYDROID BAR):</div>', unsafe_allow_html=True)
+        // Only Official Teller Keywords & Snippets
+        var tellerCompleter = {{
+            getCompletions: function(editor, session, pos, prefix, callback) {{
+                var keywords = [
+                    {{ caption: "workspace.start", value: "workspace.start\\n\\t", meta: "scope" }},
+                    {{ caption: "workspace.end", value: "workspace.end", meta: "scope" }},
+                    {{ caption: "store.var", value: "store.var {{\\n\\tvar(\\"coins\\") = 50\\n}}", meta: "storage" }},
+                    {{ caption: "var", value: "var(\\"name\\") = ", meta: "var" }},
+                    {{ caption: "true", value: "true", meta: "bool" }},
+                    {{ caption: "false", value: "false", meta: "bool" }},
+                    {{ caption: "load", value: "load(coins) : add(25)", meta: "pipeline" }},
+                    {{ caption: "add", value: "add()", meta: "math" }},
+                    {{ caption: "sub", value: "sub()", meta: "math" }},
+                    {{ caption: "mult", value: "mult()", meta: "math" }},
+                    {{ caption: "div", value: "div()", meta: "math" }},
+                    {{ caption: "block[1]", value: "block[1]", meta: "step" }},
+                    {{ caption: "block[2]", value: "block[2]", meta: "step" }},
+                    {{ caption: "block[3]", value: "block[3]", meta: "step" }},
+                    {{ caption: "if ... then", value: "if coins >= 100 then\\n\\t\\nend", meta: "control" }},
+                    {{ caption: "or if ... then", value: "or if coins < 50 then\\n\\t\\nend", meta: "control" }},
+                    {{ caption: "end", value: "end", meta: "control" }},
+                    {{ caption: "system.console()", value: "system.console()", meta: "system" }},
+                    {{ caption: "output(text.string)", value: "output(text.string) {{\\n\\ttext.print(\\"\\")\\n}}", meta: "output" }},
+                    {{ caption: "text.print", value: "text.print(\\"\\")", meta: "print" }}
+                ];
+                callback(null, keywords);
+            }}
+        }};
 
-symbols = ["Tab", ":", '"', "(", ")", "{", "}", "_", "*", "[", "]", "=", ">", "<", "~", "#"]
-cols = st.columns(len(symbols))
+        var langTools = ace.require("ace/ext/language_tools");
+        langTools.setCompleters([tellerCompleter]);
 
-for idx, sym in enumerate(symbols):
-    with cols[idx]:
-        if st.button(sym, key=f"sym_btn_{idx}", use_container_width=True):
-            insert_text = "\t" if sym == "Tab" else sym
-            st.session_state["source_code"] += insert_text
-            st.rerun()
+        function insertSym(sym) {{
+            editor.insert(sym);
+            editor.focus();
+            updateParent();
+        }}
 
-# Run Button
+        function updateParent() {{
+            var content = editor.getValue();
+            var target = window.parent.document.querySelector('textarea[aria-label="hidden_source_bridge"]');
+            if (target) {{
+                target.value = content;
+                target.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            }}
+        }}
+
+        editor.session.on('change', updateParent);
+        setTimeout(updateParent, 500);
+    </script>
+</body>
+</html>
+"""
+
+components.html(ide_component, height=410)
+
+# Hidden Bridge Area for Execution Sync
+source_code = st.text_area("hidden_source_bridge", value=default_script, label_visibility="collapsed")
+st.markdown("<style>textarea[aria-label='hidden_source_bridge'] { display: none !important; }</style>", unsafe_allow_html=True)
+
+# Run Button Bar
 run_btn = st.button("▶ Run Code", type="primary")
 
 st.markdown("#### Terminal Output")
@@ -165,7 +275,7 @@ if run_btn:
     temp_source_path = os.path.join(temp_dir, "main.tt")
 
     with open(temp_source_path, "w", encoding="utf-8") as f:
-        f.write(st.session_state["source_code"])
+        f.write(source_code)
 
     try:
         proc = subprocess.run(
