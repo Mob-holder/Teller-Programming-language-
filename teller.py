@@ -63,11 +63,11 @@ def execute_lines(lines, variables, functions, filename, start_line_idx=1, expec
             functions[current_func].append(raw_line)
             continue
 
-        # Function Call
+        # Function Call (Fixed: Now reads from line 1 of the function)
         call_match = re.match(r'^([A-Za-z0-9_]+)\((.*)\)$', stripped)
         if call_match and call_match.group(1) in functions and not stripped.startswith("input.console") and not stripped.startswith("output"):
             func_name = call_match.group(1)
-            execute_lines(functions[func_name], variables, functions, filename, line_idx, expected_block)
+            expected_block = execute_lines(functions[func_name], variables, functions, filename, 1, expected_block)
             continue
 
         # Loops
@@ -198,6 +198,11 @@ def execute_lines(lines, variables, functions, filename, start_line_idx=1, expec
             if pipe_match:
                 vname, act, val_str = pipe_match.groups()
                 step_val = int(val_str)
+                
+                if vname not in variables:
+                    col = raw_line.find(vname) + 1
+                    emit_diagnostic(filename, line_idx, raw_line, col, "NameError", f"'{vname}' is not defined")
+                    
                 if act == "add": variables[vname] += step_val
                 elif act == "sub": variables[vname] -= step_val
                 elif act == "mult": variables[vname] *= step_val
@@ -220,6 +225,8 @@ def execute_lines(lines, variables, functions, filename, start_line_idx=1, expec
                 continue
 
         emit_diagnostic(filename, line_idx, raw_line, 1, "SyntaxError", f"unexpected token '{stripped.split()[0]}'")
+
+    return expected_block
 
 def run_teller(filename):
     try:
