@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom Dark Styling
+# Dark Studio Styling
 st.markdown("""
 <style>
     .main { background-color: #0e1117; color: #c9d1d9; }
@@ -89,7 +89,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Top Bar: Red TT Logo on top + Pure "TELLER"
+# Top Bar: Red TT Logo + Clean Title
 st.markdown("""
 <div class="header-box">
     <div class="tt-top-logo">TT</div>
@@ -125,7 +125,7 @@ with st.expander("📖 Teller Language Guidebook & Grammar Rules", expanded=Fals
     - **Strict Parameters:** `(*)` indicates a mandatory field; leaving it blank throws an error.
     """)
 
-# Clean File Tab with TT Badge (No broken raw SVG leakage)
+# Clean File Tab with TT Badge
 st.markdown('<div class="file-tab-custom">main.tt <span class="tab-badge">TT</span></div>', unsafe_allow_html=True)
 
 default_script = """workspace.start
@@ -153,7 +153,7 @@ default_script = """workspace.start
 
 workspace.end"""
 
-# Interactive OneCompiler IDE with Native Fast Symbol Bar & Teller Keywords
+# Interactive IDE with Pure Teller Autocomplete & Instant Symbols
 ide_component = f"""
 <!DOCTYPE html>
 <html>
@@ -233,30 +233,41 @@ ide_component = f"""
             wrap: true
         }});
 
-        // Only Teller Keywords
+        // Clean Individual Teller Keywords (No dummy filler code)
         var tellerCompleter = {{
             getCompletions: function(editor, session, pos, prefix, callback) {{
                 var keywords = [
-                    {{ caption: "workspace.start", value: "workspace.start\\n\\t", meta: "scope" }},
-                    {{ caption: "workspace.end", value: "workspace.end", meta: "scope" }},
-                    {{ caption: "store.var", value: "store.var {{\\n\\tvar(\\"coins\\") = 50\\n}}", meta: "storage" }},
-                    {{ caption: "var", value: "var(\\"name\\") = ", meta: "var" }},
+                    // Single control words (Separate & pure)
+                    {{ caption: "if", value: "if ", meta: "keyword" }},
+                    {{ caption: "or", value: "or ", meta: "keyword" }},
+                    {{ caption: "then", value: "then", meta: "keyword" }},
+                    {{ caption: "end", value: "end", meta: "keyword" }},
                     {{ caption: "true", value: "true", meta: "bool" }},
                     {{ caption: "false", value: "false", meta: "bool" }},
-                    {{ caption: "load", value: "load(coins) : add(25)", meta: "pipeline" }},
-                    {{ caption: "add", value: "add()", meta: "math" }},
-                    {{ caption: "sub", value: "sub()", meta: "math" }},
-                    {{ caption: "mult", value: "mult()", meta: "math" }},
-                    {{ caption: "div", value: "div()", meta: "math" }},
-                    {{ caption: "block[1]", value: "block[1]", meta: "step" }},
-                    {{ caption: "block[2]", value: "block[2]", meta: "step" }},
-                    {{ caption: "block[3]", value: "block[3]", meta: "step" }},
-                    {{ caption: "if ... then", value: "if coins >= 100 then\\n\\t\\nend", meta: "control" }},
-                    {{ caption: "or if ... then", value: "or if coins < 50 then\\n\\t\\nend", meta: "control" }},
-                    {{ caption: "end", value: "end", meta: "control" }},
+
+                    // Clean control structure snippet (Clean skeleton)
+                    {{ caption: "if-block", value: "if (*) then\\n\\t\\nend", meta: "snippet" }},
+
+                    // Scoping & Structure
+                    {{ caption: "workspace.start", value: "workspace.start\\n\\t", meta: "scope" }},
+                    {{ caption: "workspace.end", value: "workspace.end", meta: "scope" }},
+                    {{ caption: "store.var", value: "store.var {{\\n\\tvar(\\"*\\") = \\n}}", meta: "storage" }},
+                    {{ caption: "var", value: "var(\\"*\\") = ", meta: "keyword" }},
+
+                    // Memory Checkpoints
+                    {{ caption: "block", value: "block[*]", meta: "step" }},
+
+                    // Pipeline & Math
+                    {{ caption: "load", value: "load(*)", meta: "pipeline" }},
+                    {{ caption: "add", value: "add(*)", meta: "math" }},
+                    {{ caption: "sub", value: "sub(*)", meta: "math" }},
+                    {{ caption: "mult", value: "mult(*)", meta: "math" }},
+                    {{ caption: "div", value: "div(*)", meta: "math" }},
+
+                    // System & Console Output
                     {{ caption: "system.console()", value: "system.console()", meta: "system" }},
-                    {{ caption: "output(text.string)", value: "output(text.string) {{\\n\\ttext.print(\\"\\")\\n}}", meta: "output" }},
-                    {{ caption: "text.print", value: "text.print(\\"\\")", meta: "print" }}
+                    {{ caption: "output(text.string)", value: "output(text.string) {{\\n\\ttext.print(\\"*\\")\\n}}", meta: "output" }},
+                    {{ caption: "text.print", value: "text.print(\\"*\\")", meta: "print" }}
                 ];
                 callback(null, keywords);
             }}
