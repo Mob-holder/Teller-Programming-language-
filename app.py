@@ -2,17 +2,20 @@ import streamlit as st
 import subprocess
 import tempfile
 import os
-from streamlit_ace import st_ace
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Teller", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
-# Clean global CSS to remove Streamlit padding without breaking the DOM layout
+# Clean global CSS (Hides Streamlit padding and securely moves the bridge off-screen)
 st.markdown("""
 <style>
     .main { background-color: #0e1117; color: #c9d1d9; }
     [data-testid="stHeader"] { display: none; }
     footer { display: none !important; }
     .block-container { padding-top: 1rem !important; padding-bottom: 0 !important; max-width: 100% !important; }
+    
+    /* Moves the data bridge off-screen so Streamlit still registers keystrokes */
+    div[data-testid="stTextArea"] { position: absolute; left: -9999px; height: 0; overflow: hidden; }
     
     .terminal-section {
         background-color: #06090e;
@@ -29,7 +32,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Self-contained Top Navbar and Tab
+# Top Navbar
 st.markdown("""
 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:12px; margin-bottom:15px;">
     <div style="display:flex; align-items:center; gap:12px;">
@@ -42,63 +45,20 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Full Guidebook built exactly from your README
+# Guidebook
 with st.expander("📖 Teller Language Guidebook & Grammar Rules", expanded=False):
     st.markdown("""
     ### **Teller's Rules and Grammar**
     **File Extension:** `.tt` (Example: `main.tt`)  
-    **Our Compiler:** [Teller Official Compiler](https://y4n85txldtzxkojiy5zexb.streamlit.app/)
 
     #### **Grammar Basics**
     - **Start and End:** Always type `workspace.start` at the beginning and end it with `workspace.end`.
-    - **Strings and Variables:** You must use variables declared as `var` inside the scripts. To print a variable, type the variable name inside the print text using `__` to connect the words. Example: `text.print("You currently have "__coins__" coins!")`. In this situation, `__` is used to connect the text with the variable `"coins"`.
-    - **Linking Actions:** Use `:` instead of "and" to link words or actions. Think of this symbol as "and then".
-    - **Memory Block Indexing:** You must close every logical step with a checkpoint. For example, if you make variables and store information in step 1, you must type `block[1]` after it. Step 2 requires `block[2]`, and so on.
-    - **Strict Parameters:** Use `(*)` when a field is required and must be filled.
-
-    #### **Teller Rules and Cheat Sheet**
-    **1. HOW TO START AND END**
-    - `workspace.start` = Turns the code ON (must be on line 1)
-    - `workspace.end` = Turns the code OFF (goes at the very end)
-
-    **2. HOW TO SAVE INFORMATION**
-    - `store.var { ... }` = Opens your memory box
-    - `var("coins") = 50` = Saves a number
-    - `var("name") = "Ghost"` = Saves a word/string
-
-    **3. SPECIAL TELLER SYMBOLS**
-    - `:` = Means "AND THEN". Chains 2 actions together on one line. Example: `load(coins) : add(20)`
-    - `()` = Means "REQUIRED". If left blank, it causes an error. Example: `string1()`
-    - `__word__` = Shows a saved variable inside your text. Example: `text.print("You have "__coins__" coins!")`
-    - `block[1]` = Marks Step 1 as finished in memory.
-
-    **4. MAKING CHOICES**
-    - `if ... then` = Runs only if the condition is true.
-    - `or if ... then` = Runs if the first check failed.
-    - `end` = Required at the end of conditional blocks. Each `end` should be aligned under its starting `if`.
-
-    **5. SHOWING TEXT ON SCREEN**
-    - `system.console()` = Turns on the screen output.
-    - `output(text.string) { ... }` = Prepares your text to be printed.
-    - `text.print(...)` = The actual words you want to show.
-
-    #### **Calculation & Comparison Symbols**
-    - `+`, `-`, `*`, `/` = Standard math (Add, Subtract, Multiply, Divide).
-    - `=` = Saves a value into a variable (Example: `var("Coins") = 50`).
-    - `>`, `<`, `>=`, `<=`, `==`, `~=` = Greater than, Less than, Greater/Equal, Less/Equal, Exact Match, Not Equal.
-
-    #### **Grammar Symbols Dictionary**
-    - `:` (Link / And) Chains two actions on one line.
-    - `(*)` (Mandatory) Field must be filled; cannot be blank.
-    - `__` (Double Under) Wraps a saved variable to display in text.
-    - `#` (Comment) Notes for human eyes; the computer ignores it.
-    - `.` (Dot Accessor) Opens a tool inside a system (Example: `system.console()`).
-    - `""` (Speech Marks) Wraps plain text so it is not read as math.
-    - `()` (Pouch) Holds target names or inputs.
-    - `[]` (Memory Slot) Labels memory step checkpoints (Example: `block[1]`).
-    - `{}` (Room / Scope) Boxes grouped code together (Example: `store.var { ... }`).
-    
-    *Still in BETA version, more features coming soon!*
+    - **Variables:** `store.var { var("name") = value }`
+    - **Input & Numbers:** `input.console("...") { number.val = [var_name] }`
+    - **Checkpoints:** `block[1]`, `block[2]`
+    - **Print:** `output(text.string) { text.print("Score: "coins"!") }`
+    - **Functions:** `store.function Name()`
+    - **Loops:** `do text.print("...") [1,5]`
     """)
 
 st.markdown("""
@@ -117,7 +77,7 @@ store.function InitPlayer(Name)
     }
 end
 
-# 2. Call Function & Add Bonus Loop
+# 2. Call Function & Add Bonus
 InitPlayer(Name)
 block[1]
 
@@ -134,22 +94,89 @@ block[3]
 
 workspace.end"""
 
-# The Editor
-user_code = st_ace(
-    value=default_script,
-    language="ruby", 
-    theme="tomorrow_night_eighties",
-    keybinding="vscode",
-    font_size=14,
-    tab_size=4,
-    show_gutter=True,
-    wrap=True,
-    auto_update=True,
-    min_lines=18,
-    key="teller_editor"
-)
+# HTML Editor with Pure Teller Autocomplete
+ide_html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ext-language_tools.js"></script>
+    <style>
+        body {{ margin: 0; background: #0e1117; font-family: sans-serif; }}
+        #editor {{ width: 100%; height: 350px; font-size: 14px; border: 1px solid #30363d; border-radius: 0 6px 6px 6px; }}
+    </style>
+</head>
+<body>
+    <div id="editor">{default_script}</div>
+    <script>
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/tomorrow_night_eighties");
+        editor.session.setMode("ace/mode/ruby"); // Provides syntax coloring
+        
+        editor.setOptions({{
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
+            showLineNumbers: true,
+            tabSize: 4,
+            useSoftTabs: true,
+            wrap: true
+        }});
 
-# Controls
+        // Force Ace to use ONLY Teller keywords (Nukes standard Ruby dictionary)
+        editor.completers = [{{
+            getCompletions: function(editor, session, pos, prefix, callback) {{
+                var keywords = [
+                    {{ caption: "workspace.start", value: "workspace.start", meta: "keyword" }},
+                    {{ caption: "workspace.end", value: "workspace.end", meta: "keyword" }},
+                    {{ caption: "store.var", value: "store.var {{\\n    \\n}}", meta: "keyword" }},
+                    {{ caption: "var", value: "var(\\"\\") = ", meta: "keyword" }},
+                    {{ caption: "block", value: "block[]", meta: "keyword" }},
+                    {{ caption: "if", value: "if ", meta: "keyword" }},
+                    {{ caption: "or if", value: "or if ", meta: "keyword" }},
+                    {{ caption: "then", value: "then", meta: "keyword" }},
+                    {{ caption: "end", value: "end", meta: "keyword" }},
+                    {{ caption: "load", value: "load() : ", meta: "keyword" }},
+                    {{ caption: "add", value: "add()", meta: "keyword" }},
+                    {{ caption: "sub", value: "sub()", meta: "keyword" }},
+                    {{ caption: "mult", value: "mult()", meta: "keyword" }},
+                    {{ caption: "div", value: "div()", meta: "keyword" }},
+                    {{ caption: "system.console()", value: "system.console()", meta: "keyword" }},
+                    {{ caption: "input.console()", value: "input.console(\\"\\") {{\\n    number.val = []\\n}}", meta: "keyword" }},
+                    {{ caption: "number.val", value: "number.val = []", meta: "keyword" }},
+                    {{ caption: "output(text.string)", value: "output(text.string) {{\\n    \\n}}", meta: "keyword" }},
+                    {{ caption: "text.print", value: "text.print(\\"\\")", meta: "keyword" }},
+                    {{ caption: "store.function", value: "store.function ()\\n    \\nend", meta: "keyword" }},
+                    {{ caption: "do", value: "do text.print(\\"\\") [1,]", meta: "keyword" }},
+                    {{ caption: "true", value: "true", meta: "keyword" }},
+                    {{ caption: "false", value: "false", meta: "keyword" }}
+                ];
+                callback(null, keywords);
+            }}
+        }}];
+
+        // Syncs data instantly to Streamlit
+        function updateParent() {{
+            var content = editor.getValue();
+            var target = window.parent.document.querySelector('textarea[aria-label="hidden_bridge"]');
+            if (target) {{
+                var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+                nativeSetter.call(target, content);
+                target.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            }}
+        }}
+
+        editor.session.on('change', updateParent);
+        setTimeout(updateParent, 500);
+    </script>
+</body>
+</html>
+"""
+components.html(ide_html, height=360)
+
+# The Off-screen Bridge Data Store
+source_code = st.text_area("hidden_bridge", value=default_script, label_visibility="collapsed")
+
+# Native Controls
 col1, col2 = st.columns([2, 5])
 with col1:
     run_btn = st.button("▶ Run Code", type="primary", use_container_width=True)
@@ -162,7 +189,7 @@ if run_btn:
     temp_source_path = os.path.join(temp_dir, "main.tt")
     
     with open(temp_source_path, "w", encoding="utf-8") as f:
-        f.write(user_code)
+        f.write(source_code)
 
     try:
         proc = subprocess.run(
