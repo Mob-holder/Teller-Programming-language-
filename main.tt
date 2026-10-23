@@ -1,6 +1,5 @@
 ## A example of the Teller script
 
-```lua
 workspace.start
 
     # Step 1: Initialize player and enemy data
@@ -33,4 +32,3 @@ workspace.start
     block[3]
 
 workspace.end
-```
