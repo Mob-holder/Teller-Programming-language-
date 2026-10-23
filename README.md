@@ -1,5 +1,7 @@
 # Teller's rules and Grammars
 
+Teller File extension - `.tt`
+example - `main.tt`
 # Grammars
  - **Start and End:** Always type `workspace.start` at the beginning and end it with `workspace.end`. 
 - **Strings and variables:** You must use variables as `var` inside the scripts and also to print a variable just type the variable name inside the print text. and to connect the variable and the text inside print, then check this example - text.print("You current have"__coins__ "coins !") in this situation __ is used to connect the words with each other and the "coin" is a variable.
