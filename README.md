@@ -9,16 +9,16 @@
 
 # Teller Rules and Cheat Sheet
 
-1. HOW TO START AND END
+# 1. HOW TO START AND END
 workspace.start  =  Turns the code ON (must be on line 1)
 workspace.end    =  Turns the code OFF (goes at the very end)
 
-2. HOW TO SAVE INFORMATION
+# 2. HOW TO SAVE INFORMATION
 store.var        =  Opens your memory box
 var("coins")     =  Saves a number (like: var("coins") = 50)
 var("name")      =  Saves a word (like: var("name") = "Ghost")
 
-3. SPECIAL TELLER SYMBOLS
+# 3. SPECIAL TELLER SYMBOLS
 :                =  Means "AND THEN". Chains 2 actions together on one line.
                     Example: load(coins) : add(20)
 
@@ -31,18 +31,84 @@ __word__         =  Shows a saved variable inside your text.
 block[1]         =  Marks Step 1 as finished in memory.
 block[2]         =  Marks Step 2 as finished in memory.
 
-4. MAKING CHOICES
+# 4. MAKING CHOICES
 if ... then      =  Runs only if the condition is true.
 or if ... then   =  Runs if the first check failed.
 end              =  Per block steps required per `end` at the end. Each `end` should be under the first `end's` end letter.
 
-5. SHOWING TEXT ON SCREEN
+# 5. SHOWING TEXT ON SCREEN
 system.console() =  Turns on the screen output.
 output(text.string)     =  Sends your text to be printed.
 text.print(...)  =  The actual words you want to show.
-#                =  A human note. The computer ignores it.
 
+--------------------------------------------------
+SYMBOLS 
+--------------------------------------------------
+# 1. Calculation Symbols 
 
+`+`  (Plus)            Adds numbers together
+                        Example: 10 + 5  (equals 15)
+
+  `-`   (Minus)           Takes away numbers
+                        Example: 10 - 5  (equals 5)
+
+  `*`  (Multiply)        Multiplies numbers (Times)
+                        Example: 5 * 2   (equals 10)
+
+  `/`  (Divide)          Divides numbers into parts
+                        Example: 10 / 2  (equals 5)
+
+  `=`   (Set / Equals)    Saves a value into a variable
+                        Example: var("Coins") = 50
+
+# 2. Comparison Symbols
+
+ `>`   (Greater Than)    Left side is bigger than right
+                        Example: if Level `>` 10 then
+
+  `<`   (Less Than)       Left side is smaller than right
+                        Example: if Level `<` 5 then
+
+  `>=`  (Greater / Equal) Bigger than or exact match
+                        Example: if Coins `>=` 100 then
+
+  |<=`  (Less / Equal)    Smaller than or exact match
+                        Example: if Health <= 0 then
+
+  `==`  (Exact Match)     Checks if both sides are strictly identical
+                        Example: if Name `==` "Ghost" then
+
+  `~=` (Not Equal)       Checks if both sides are different
+                        Example: if Rank `~=` "Admin" then
+
+# 3. TELLER GRAMMAT SYMBOLS
+
+ `:`   (Link / And)      Chains two actions on one line
+                        Example: load(Coins) : add(25)
+
+  |(*)` (Mandatory)       Field must be filled; cannot be blank
+                        Example: string1(*)
+
+  `__`  (Double Under)    Wraps a saved variable to display in text
+                        Example: text.print("Level: "__Level__"!")
+
+  `#`   (Comment)         Notes for human eyes; the computer ignores it
+                        Example: # This adds gold reward
+
+  `.`   (Dot Accessor)    Opens a tool inside a system
+                        Example: system.console() or workspace.start
+
+  `""`  (Speech Marks)    Wraps plain words/text so it is not read as math
+                        Example: "Hello player"
+
+  `()`  (Pouch)           Holds target names or inputs
+                        Example: load(Coins)
+
+  |[]`  (Memory Slot)     Labels memory step checkpoints
+                        Example: block[1]
+
+  `{}`  (Room / Scope)    Boxes grouped code together
+                        Example: store.var { ... }
 --------------------------------------------------
 SAMPLE WORKING SCRIPT:
 --------------------------------------------------
