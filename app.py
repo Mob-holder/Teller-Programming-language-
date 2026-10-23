@@ -4,73 +4,22 @@ import tempfile
 import os
 from streamlit_ace import st_ace
 
-st.set_page_config(page_title="Teller IDE", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Teller", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
-# Aggressive CSS to kill all Streamlit default UI, padding, and headers
+# Clean global CSS to remove Streamlit padding without breaking the DOM layout
 st.markdown("""
 <style>
-    /* Nuke Streamlit's default margins and headers */
-    header {visibility: hidden !important;}
-    footer {visibility: hidden !important;}
-    .block-container {
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: 100% !important;
-    }
+    .main { background-color: #0e1117; color: #c9d1d9; }
+    [data-testid="stHeader"] { display: none; }
+    footer { display: none !important; }
+    .block-container { padding-top: 1rem !important; padding-bottom: 0 !important; max-width: 100% !important; }
     
-    /* Professional IDE Base Layout */
-    .ide-container {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        background-color: #0e1117;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    .top-navbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: #161b22;
-        border-bottom: 1px solid #30363d;
-        padding: 10px 20px;
-    }
-    .brand-group {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .tt-logo {
-        background: #cc1414; color: #fff; font-weight: 900; font-size: 18px;
-        padding: 4px 10px; border-radius: 6px; box-shadow: 0 2px 8px rgba(204, 20, 20, 0.4);
-    }
-    .brand-title { color: #c9d1d9; font-size: 18px; font-weight: bold; margin: 0; }
-    
-    .editor-section {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        padding: 15px 20px;
-    }
-    .tab-bar {
-        display: flex;
-        background-color: #0e1117;
-        border-bottom: 1px solid #30363d;
-    }
-    .active-tab {
-        background-color: #161b22;
-        color: #e6edf3;
-        border-top: 2px solid #cc1414;
-        border-right: 1px solid #30363d;
-        border-left: 1px solid #30363d;
-        padding: 8px 16px;
-        font-family: 'Courier New', monospace;
-        font-size: 13px;
-        font-weight: bold;
-    }
     .terminal-section {
         background-color: #06090e;
-        border-top: 1px solid #30363d;
+        border: 1px solid #30363d;
+        border-radius: 6px;
         padding: 15px 20px;
+        margin-top: 15px;
         min-height: 250px;
         font-family: 'SFMono-Regular', Consolas, monospace;
         color: #5af78e;
@@ -80,20 +29,20 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Top Navigation Bar
+# Self-contained Top Navbar and Tab (No unclosed HTML divs)
 st.markdown("""
-<div class="ide-container">
-    <div class="top-navbar">
-        <div class="brand-group">
-            <div class="tt-logo">TT</div>
-            <p class="brand-title">TELLER IDE</p>
+<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #30363d; padding-bottom:12px; margin-bottom:15px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+        <div style="background:#cc1414; color:#fff; font-weight:900; font-size:22px; padding:6px 14px; border-radius:8px; box-shadow:0 4px 10px rgba(204,20,20,0.3);">TT</div>
+        <div>
+            <h1 style="color:#ff2b2b; font-size:24px; font-weight:900; margin:0; letter-spacing:0.5px; line-height:1;">TELLER</h1>
+            <p style="color:#8b949e; font-size:13px; margin:0;">Official Compiler</p>
         </div>
-        <div style="color:#8b949e; font-size:13px;">Official Compiler</div>
     </div>
-    <div class="editor-section">
-        <div class="tab-bar">
-            <div class="active-tab">main.tt</div>
-        </div>
+</div>
+<div style="display:inline-flex; align-items:center; background:#161b22; border-top:3px solid #cc1414; border-left:1px solid #30363d; border-right:1px solid #30363d; padding:8px 16px; font-family:monospace; font-size:14px; font-weight:bold; color:#fff; border-radius:6px 6px 0 0; margin-bottom:-1rem; position:relative; z-index:2;">
+    main.tt
+</div>
 """, unsafe_allow_html=True)
 
 default_script = """workspace.start
@@ -123,7 +72,7 @@ block[3]
 
 workspace.end"""
 
-# Auto-formats indents properly. Popups disabled by default in st_ace for Ruby mode.
+# The Editor
 user_code = st_ace(
     value=default_script,
     language="ruby", 
@@ -138,16 +87,14 @@ user_code = st_ace(
     key="teller_editor"
 )
 
-# IDE Controls (Run & Stdin)
-col1, col2 = st.columns([1, 8])
+# Controls
+col1, col2 = st.columns([2, 5])
 with col1:
-    run_btn = st.button("▶ Run", type="primary", use_container_width=True)
+    run_btn = st.button("▶ Run Code", type="primary", use_container_width=True)
 with col2:
     user_stdin = st.text_input("Console Input (Stdin)", value="", label_visibility="collapsed", placeholder="Type input here if script asks for it...")
 
-st.markdown("</div>", unsafe_allow_html=True) # Close editor-section
-
-# Terminal Execution
+# Execution
 if run_btn:
     temp_dir = tempfile.mkdtemp()
     temp_source_path = os.path.join(temp_dir, "main.tt")
@@ -181,5 +128,3 @@ if run_btn:
         if os.path.exists(temp_dir): os.rmdir(temp_dir)
 else:
     st.markdown('<div class="terminal-section" style="color:#8b949e;">Terminal\n\nWaiting for execution...</div>', unsafe_allow_html=True)
-
-st.markdown("</div>", unsafe_allow_html=True) # Close ide-container
