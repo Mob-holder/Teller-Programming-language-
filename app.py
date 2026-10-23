@@ -5,21 +5,43 @@ import os
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="Teller Studio IDE",
+    page_title="Teller",
     page_icon="⚡",
     layout="wide"
 )
 
-# Dark OneCompiler Styling
+# Custom Dark Styling
 st.markdown("""
 <style>
     .main { background-color: #0e1117; color: #c9d1d9; }
+    .header-box {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 8px;
+    }
+    .tt-top-logo {
+        background: #cc1414;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 900;
+        font-size: 26px;
+        letter-spacing: -1px;
+        width: 52px;
+        height: 52px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(204, 20, 20, 0.4);
+    }
     .brand-title {
         color: #ff2b2b !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        font-size: 26px !important;
-        font-weight: 800 !important;
+        font-size: 32px !important;
+        font-weight: 900 !important;
         margin: 0 !important;
+        letter-spacing: 0.5px;
     }
     .brand-subtitle {
         color: #8b949e !important;
@@ -34,19 +56,22 @@ st.markdown("""
         border-top: 3px solid #cc1414;
         border-left: 1px solid #30363d;
         border-right: 1px solid #30363d;
-        padding: 6px 14px;
+        padding: 7px 16px;
         font-family: 'Courier New', monospace;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: bold;
         color: #ffffff;
         border-radius: 6px 6px 0 0;
         margin-bottom: 0px;
     }
-    .tab-logo-img {
-        width: 18px;
-        height: 18px;
-        vertical-align: middle;
+    .tab-badge {
+        background-color: #cc1414;
+        color: #ffffff;
+        font-weight: 900;
+        font-size: 10px;
+        padding: 2px 6px;
         border-radius: 3px;
+        letter-spacing: 0.5px;
     }
     .terminal-box {
         background-color: #06090e;
@@ -64,10 +89,18 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Top Bar Header
-st.markdown('<p class="brand-title">TELLER STUDIO</p><p class="brand-subtitle">Official compiler and interactive playground for Teller (.tt)</p>', unsafe_allow_html=True)
+# Top Bar: Red TT Logo on top + Pure "TELLER"
+st.markdown("""
+<div class="header-box">
+    <div class="tt-top-logo">TT</div>
+    <div>
+        <p class="brand-title">TELLER</p>
+        <p class="brand-subtitle">Official compiler and interactive playground for Teller (.tt)</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# Built-in Guidebook Expander
+# Guidebook Expander
 with st.expander("📖 Teller Language Guidebook & Grammar Rules", expanded=False):
     st.markdown("""
     ### **Teller's Rules and Grammars**
@@ -92,14 +125,9 @@ with st.expander("📖 Teller Language Guidebook & Grammar Rules", expanded=Fals
     - **Strict Parameters:** `(*)` indicates a mandatory field; leaving it blank throws an error.
     """)
 
-# Custom Tab: Shows main.tt followed by your TT Icon Logo
-logo_html_img = '<span style="background:#cc1414;color:#fff;font-size:10px;padding:2px 5px;border-radius:3px;">TT</span>'
-if os.path.exists("logo.svg"):
-    logo_html_img = '<img class="tab-logo-img" src="data:image/svg+xml;utf8,' + open("logo.svg", "r", encoding="utf-8").read().replace('"', "'") + '" />'
+# Clean File Tab with TT Badge (No broken raw SVG leakage)
+st.markdown('<div class="file-tab-custom">main.tt <span class="tab-badge">TT</span></div>', unsafe_allow_html=True)
 
-st.markdown(f'<div class="file-tab-custom">main.tt {logo_html_img}</div>', unsafe_allow_html=True)
-
-# Default Working Script
 default_script = """workspace.start
 
     # Step 1: Save data
@@ -125,7 +153,7 @@ default_script = """workspace.start
 
 workspace.end"""
 
-# Interactive OneCompiler IDE with Native Fast Symbol Bar & Pure Teller Autocomplete
+# Interactive OneCompiler IDE with Native Fast Symbol Bar & Teller Keywords
 ide_component = f"""
 <!DOCTYPE html>
 <html>
@@ -155,7 +183,7 @@ ide_component = f"""
             background: #21262d;
             border: 1px solid #30363d;
             color: #c9d1d9;
-            padding: 5px 10px;
+            padding: 6px 11px;
             font-family: monospace;
             font-size: 14px;
             border-radius: 4px;
@@ -193,7 +221,7 @@ ide_component = f"""
     <script>
         var editor = ace.edit("editor");
         editor.setTheme("ace/theme/tomorrow_night_eighties");
-        editor.session.setMode("ace/mode/text"); // No Ruby modes or random syntax
+        editor.session.setMode("ace/mode/text");
         editor.setOptions({{
             enableBasicAutocompletion: true,
             enableSnippets: true,
@@ -205,7 +233,7 @@ ide_component = f"""
             wrap: true
         }});
 
-        // Only Official Teller Keywords & Snippets
+        // Only Teller Keywords
         var tellerCompleter = {{
             getCompletions: function(editor, session, pos, prefix, callback) {{
                 var keywords = [
@@ -253,7 +281,7 @@ ide_component = f"""
         }}
 
         editor.session.on('change', updateParent);
-        setTimeout(updateParent, 500);
+        setTimeout(updateParent, 400);
     </script>
 </body>
 </html>
