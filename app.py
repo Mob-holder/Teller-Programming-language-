@@ -94,31 +94,25 @@ with col_btn2:
         st.session_state.active_tab = "Output"
         st.rerun()
 
-
 default_script = """workspace.start
 
-# 1. Define a Function
-store.function InitPlayer(Name)
+    # Step 1: Save data
     store.var {
-        var("player") = "Ghost"
         var("coins") = 100
+        var("player") = "Ghost"
     }
-end
+    block[1]
 
-# 2. Call Function
-InitPlayer(Name)
-block[1]
+    # Step 2: Add 25 coins using the link (:)
+    load(coins) : add(25)
+    block[2]
 
-load(coins) : add(25)
-block[2]
-
-# 3. Print out a loop
-system.console()
-do text.print("Initializing System...") [1,3]
-output(text.string) {
-    text.print("Welcome "__player__", you have "__coins__" coins!")
-}
-block[3]
+    # Step 3: Print result
+    system.console()
+    output(text.string) {
+        text.print("Welcome back "__player__", you have "__coins__" coins!")
+    }
+    block[3]
 
 workspace.end"""
 
@@ -136,7 +130,6 @@ if st.session_state.active_tab == "Code":
     </div>
     """, unsafe_allow_html=True)
 
-    # Clean st_ace component (Not wrapped in custom HTML so you can type perfectly)
     user_code = st_ace(
         value=default_script,
         language="ruby", 
@@ -144,7 +137,7 @@ if st.session_state.active_tab == "Code":
         keybinding="vscode",
         font_size=14,
         tab_size=4,
-        show_gutter=True, # Enables line numbers natively
+        show_gutter=True,
         wrap=True,
         auto_update=True,
         min_lines=18,
@@ -185,7 +178,6 @@ if st.session_state.active_tab == "Code":
                 st.session_state.is_error = False
                 st.session_state.terminal_out = raw_stdout if raw_stdout else "[Program executed successfully]"
             
-            # Switch to Output tab automatically
             st.session_state.active_tab = "Output"
             st.rerun()
 
@@ -204,7 +196,6 @@ if st.session_state.active_tab == "Code":
 # ----------------------------------------
 elif st.session_state.active_tab == "Output":
     
-    # If the user hasn't clicked run yet, show the placeholder Live Console screen
     if not st.session_state.has_run:
         st.markdown("""
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; color: #8b949e; background-color: #06090e; border: 1px solid #30363d; border-radius: 6px;">
@@ -214,7 +205,6 @@ elif st.session_state.active_tab == "Output":
         </div>
         """, unsafe_allow_html=True)
     else:
-        # Show actual output
         color_class = "stderr-text" if st.session_state.is_error else "stdout-text"
         st.markdown(f"""
         <div class="terminal-section {color_class}">
@@ -222,11 +212,133 @@ elif st.session_state.active_tab == "Output":
         </div>
         """, unsafe_allow_html=True)
 
-# Hidden Guidebook included at the bottom for reference
+# ----------------------------------------
+# NEW: COMPLETE IMPROVED GUIDEBOOK
+# ----------------------------------------
 with st.expander("📖 Teller Language Guidebook & Grammar", expanded=False):
     st.markdown("""
-    **Variables:** `store.var { var("name") = value }`  
-    **Input:** `input.console("...") { number.val = [var_name] }`  
-    **Functions:** `store.function Name()`  
-    **Loops:** `do text.print("...") [1,5]`  
-    """)
+# Teller's Rules and Grammar
+
+Teller File extension - `.tt`  
+Example - `main.tt`  
+Our Compiler - [https://y4n85txldtzxkojiy5zexb.streamlit.app/](https://y4n85txldtzxkojiy5zexb.streamlit.app/)
+
+## Grammars
+- **Start and End:** Always type `workspace.start` at the beginning and end it with `workspace.end`.
+- **Strings and variables:** You must use variables as `var` inside the scripts. To print a variable, just type the variable name inside the print text. To connect the variable and the text inside print, check this example: `text.print("You currently have "__coins__" coins!")`. In this situation, `__` is used to connect the words with each other and `"coins"` is a variable.
+- **Linking or connecting words outside of print:** Use `:` instead of `and` to link words. Think of this word as `and`.
+- **Memory block indexing:** If you do every step (like at the first step you made the variables and stored their info), then after this you'll have to type `block[1]` or `block[2]` according to the count of the blocks or the steps.
+- **Strict parameters and parentheses:** Use `(*)` when the word is required to be filled.
+
+---
+
+## Teller Rules and Cheat Sheet
+
+### 1. HOW TO START AND END
+- `workspace.start` = Turns the code ON (must be on line 1)
+- `workspace.end` = Turns the code OFF (goes at the very end)
+
+### 2. HOW TO SAVE INFORMATION
+- `store.var` = Opens your memory box
+- `var("coins")` = Saves a number (like: `var("coins") = 50`)
+- `var("name")` = Saves a word (like: `var("name") = "Ghost"`)
+
+### 3. SPECIAL TELLER SYMBOLS
+- `:` = Means "AND THEN". Chains 2 actions together on one line.
+  - *Example:* `load(coins) : add(20)`
+- `(*)` = Means "REQUIRED". If left blank, it causes an error.
+  - *Example:* `string1(*)`
+- `__word__` = Shows a saved variable inside your text.
+  - *Example:* `text.print("You have "__coins__" coins!")`
+- `block[1]` = Marks Step 1 as finished in memory.
+- `block[2]` = Marks Step 2 as finished in memory.
+
+### 4. MAKING CHOICES
+- `if ... then` = Runs only if the condition is true.
+- `or if ... then` = Runs if the first check failed.
+- `end` = Per block steps require an `end` at the close. Each `end` should be under its first `end` letter.
+
+### 5. SHOWING TEXT ON SCREEN
+- `system.console()` = Turns on the screen output.
+- `output(text.string)` = Sends your text to be printed.
+- `text.print(...)` = The actual words you want to show.
+
+### 6. LOOPING 
+- `do text.print("Hello, World!") [1,3]` = Will print the text 3 times in the output.
+
+### 7. FUNCTIONS
+Functions are like a magical spell.
+```teller
+store.function Player(Health, Age)
+    store.var {
+        var("Health") = 100
+        var("Age") = 18
+    }
+end
+block[1]
+
+Player(Health) 
+block[2]
+
+workspace.end
+
+## 8. INPUT TEXTS
+To make any user able to answer the questions in the output console, we use input.console.
+input.console("Enter your age")
+Now, to make the number an actual mathematical value, we use number.val. For example, if the system gives an interactive question asking for your age and you enter 17, Teller wouldn't initially know if it is a mathematical value. If we just type 17+10, it'll print 1710 only. By typing number.val, we are able to add 17 with 10 with the result being 27.
+Example:
+input.console("Enter your age:") {
+    number.val = [age] 
+}
+load(age) : add(3)
+system.console()
+output(text.string) {
+    text.print("You'll turn "__age__" in 3 years!")
+}
+
+# SYMBOLS
+# 1. Calculation Symbols
++ (Plus) = Adds numbers together. Example: 10 + 5 (equals 15)
+- (Minus) = Takes away numbers. Example: 10 - 5 (equals 5)
+* (Multiply) = Multiplies numbers (Times). Example: 5 * 2 (equals 10)
+/ (Divide) = Divides numbers into parts. Example: 10 / 2 (equals 5)
+= (Set / Equals) = Saves a value into a variable. Example: var("Coins") = 50
+# 2. Comparison Symbols
+> (Greater Than) = Left side is bigger than right. Example: if Level > 10 then
+< (Less Than) = Left side is smaller than right. Example: if Level < 5 then
+>= (Greater / Equal) = Bigger than or exact match. Example: if Coins >= 100 then
+<= (Less / Equal) = Smaller than or exact match. Example: if Health <= 0 then
+== (Exact Match) = Checks if both sides are strictly identical. Example: if Name == "Ghost" then
+~= (Not Equal) = Checks if both sides are different. Example: if Rank ~= "Admin" then
+# 3. TELLER GRAMMAR SYMBOLS
+: (Link / And) = Chains two actions on one line. Example: load(Coins) : add(25)
+(*) (Mandatory) = Field must be filled; cannot be blank. Example: string1(*)
+__ (Double Under) = Wraps a saved variable to display in text. Example: text.print("Level: "__Level__"!")
+# (Comment) = Notes for human eyes; the computer ignores it. Example: # This adds gold reward
+. (Dot Accessor) = Opens a tool inside a system. Example: system.console() or workspace.start
+"" (Speech Marks) = Wraps plain words/text so it is not read as math. Example: "Hello player"
+() (Pouch) = Holds target names or inputs. Example: load(Coins)
+[] (Memory Slot) = Labels memory step checkpoints. Example: block[1]
+{} (Room / Scope) = Boxes grouped code together. Example: store.var { ... }
+
+workspace.start
+
+    # Step 1: Save data
+    store.var {
+        var("coins") = 100
+        var("player") = "Ghost"
+    }
+    block[1]
+
+    # Step 2: Add 25 coins using the link (:)
+    load(coins) : add(25)
+    block[2]
+
+    # Step 3: Print result
+    system.console()
+    output(text.string) {
+        text.print("Welcome back "__player__", you have "__coins__" coins!")
+    }
+    block[3]
+
+workspace.end
