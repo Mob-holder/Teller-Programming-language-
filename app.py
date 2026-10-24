@@ -6,80 +6,94 @@ from streamlit_ace import st_ace
 
 st.set_page_config(page_title="Teller", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
-# VS Code Clone CSS Injection
+# Initialize Session State for Tabs and Output
+if "active_tab" not in st.session_state:
+    st.session_state.active_tab = "Code"
+if "has_run" not in st.session_state:
+    st.session_state.has_run = False
+if "terminal_out" not in st.session_state:
+    st.session_state.terminal_out = ""
+if "is_error" not in st.session_state:
+    st.session_state.is_error = False
+
+# Clean Global CSS
 st.markdown("""
 <style>
-    /* Nuke Streamlit's defaults */
+    /* Dark Theme Base */
+    .main { background-color: #0e1117; color: #c9d1d9; }
     [data-testid="stHeader"] { display: none; }
     footer { display: none !important; }
-    .block-container { padding: 0 !important; max-width: 100% !important; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background-color: #1e1e1e; }
-    body { background-color: #1e1e1e; color: #cccccc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; max-width: 1000px !important; }
     
-    /* Layout Grid */
-    .vscode-layout { display: flex; flex: 1; height: calc(100vh - 22px); width: 100%; overflow: hidden; }
+    /* Segmented Control Buttons (Sticking Code & Output together) */
+    div[data-testid="column"]:nth-child(1) { padding-right: 0 !important; }
+    div[data-testid="column"]:nth-child(2) { padding-left: 0 !important; }
+    div[data-testid="column"]:nth-child(1) button { 
+        border-radius: 6px 0 0 6px !important; 
+        border-right: none !important; 
+        background-color: #161b22; 
+        color: #c9d1d9;
+    }
+    div[data-testid="column"]:nth-child(2) button { 
+        border-radius: 0 6px 6px 0 !important; 
+        background-color: #161b22; 
+        color: #c9d1d9;
+    }
     
-    /* Activity Bar (Far Left) */
-    .activity-bar { width: 48px; background-color: #333333; display: flex; flex-direction: column; align-items: center; padding-top: 15px; border-right: 1px solid #252526; z-index: 10; }
-    .activity-icon { width: 24px; height: 24px; background-color: #858585; margin-bottom: 20px; border-radius: 4px; opacity: 0.8; }
-    .activity-icon.active { border-left: 2px solid #ffffff; border-radius: 0; background-color: #ffffff; opacity: 1; }
+    /* File Tab */
+    .file-tab-container {
+        display: inline-flex; align-items: center; justify-content: space-between;
+        background: #161b22; border-top: 3px solid #cc1414; 
+        border-left: 1px solid #30363d; border-right: 1px solid #30363d;
+        padding: 8px 16px; font-family: monospace; font-size: 14px; 
+        font-weight: bold; color: #fff; border-radius: 6px 6px 0 0; 
+        margin-bottom: -1rem; position: relative; z-index: 2;
+        width: 180px;
+    }
+    .file-tt-icon {
+        background-color: #cc1414; color: white; padding: 2px 5px; 
+        border-radius: 3px; font-size: 10px; font-weight: 900; margin-right: 8px;
+    }
+    .file-add-btn {
+        color: #8b949e; cursor: pointer; font-size: 16px; margin-left: auto;
+    }
+    .file-add-btn:hover { color: #fff; }
     
-    /* Explorer Sidebar */
-    .explorer-sidebar { width: 200px; background-color: #252526; display: flex; flex-direction: column; }
-    .explorer-title { font-size: 11px; text-transform: uppercase; color: #cccccc; padding: 10px 20px; letter-spacing: 0.5px; }
-    .explorer-item { padding: 4px 20px 4px 30px; font-size: 13px; color: #cccccc; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-    .explorer-item.active { background-color: #37373d; color: #ffffff; }
-    .tt-icon { color: #cc1414; font-weight: bold; font-family: monospace; font-size: 14px; }
-    
-    /* Main Editor Area */
-    .editor-area { flex: 1; display: flex; flex-direction: column; background-color: #1e1e1e; min-width: 0; }
-    
-    /* Editor Tabs */
-    .tabs-container { display: flex; background-color: #2d2d2d; border-bottom: 1px solid #1e1e1e; overflow-x: auto; }
-    .tab { background-color: #1e1e1e; color: #ffffff; padding: 8px 16px; font-size: 13px; border-top: 1px solid #007acc; border-right: 1px solid #2d2d2d; display: flex; align-items: center; gap: 6px; cursor: default; }
-    
-    /* Terminal Area */
-    .terminal-container { height: 260px; background-color: #1e1e1e; border-top: 1px solid #333333; display: flex; flex-direction: column; }
-    .terminal-header { display: flex; background-color: #1e1e1e; border-bottom: 1px solid #333333; }
-    .terminal-tab { color: #e7e7e7; padding: 8px 16px; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #e7e7e7; cursor: default; }
-    .terminal-output { flex: 1; padding: 10px 16px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; overflow-y: auto; color: #cccccc; white-space: pre-wrap; }
-    .stdout-text { color: #4af626; }
-    .stderr-text { color: #f48771; }
-    
-    /* Blue Status Bar */
-    .status-bar { height: 22px; background-color: #007acc; color: #ffffff; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; font-size: 12px; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; }
-    .status-item { display: flex; align-items: center; gap: 6px; cursor: default; }
-    .status-item:hover { background-color: rgba(255,255,255,0.1); }
+    /* Terminal Styles */
+    .terminal-section {
+        background-color: #06090e; border: 1px solid #30363d; border-radius: 6px;
+        padding: 15px 20px; margin-top: 15px; min-height: 350px;
+        font-family: 'SFMono-Regular', Consolas, monospace; white-space: pre-wrap;
+    }
+    .stdout-text { color: #5af78e; }
+    .stderr-text { color: #ff5c57; }
 </style>
 """, unsafe_allow_html=True)
 
-# Layout Structure (Sidebar + Editor + Terminal)
-st.markdown("""
-<div class="vscode-layout">
-    <!-- Activity Bar -->
-    <div class="activity-bar">
-        <div class="activity-icon active" style="mask: url('data:image/svg+xml;utf8,<svg viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z\"/></svg>') no-repeat center; -webkit-mask: url('data:image/svg+xml;utf8,<svg viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z\"/></svg>') no-repeat center;"></div>
-    </div>
-    
-    <!-- Explorer Sidebar -->
-    <div class="explorer-sidebar">
-        <div class="explorer-title">Explorer</div>
-        <div style="font-weight: bold; font-size: 11px; padding: 5px 20px; color: #cccccc;">TELLER PROJECT</div>
-        <div class="explorer-item active">
-            <span class="tt-icon">⚡</span> main.tt
-        </div>
-        <div class="explorer-item">
-            <span style="color:#007acc; font-family:monospace; font-weight:bold;">{}</span> Guidebook.md
+# Top Navbar (TT Logo + Title + Segmented Control)
+col_logo, col_btn1, col_btn2, col_space = st.columns([4, 1.5, 1.5, 2])
+
+with col_logo:
+    st.markdown("""
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom: 20px;">
+        <div style="background-color: #cc1414; color: white; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-family: monospace; font-weight: 900; font-size: 20px; border-radius: 6px; box-shadow: 0 2px 5px rgba(204,20,20,0.4);">TT</div>
+        <div>
+            <h1 style="color:#ff2b2b; font-size:24px; font-weight:900; margin:0; letter-spacing:0.5px; line-height:1;">TELLER</h1>
+            <p style="color:#8b949e; font-size:13px; margin:0;">Official Compiler</p>
         </div>
     </div>
-    
-    <!-- Editor Area -->
-    <div class="editor-area">
-        <div class="tabs-container">
-            <div class="tab">
-                <span class="tt-icon">⚡</span> main.tt
-            </div>
-        </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+with col_btn1:
+    if st.button("Code", use_container_width=True):
+        st.session_state.active_tab = "Code"
+        st.rerun()
+
+with col_btn2:
+    if st.button("Output", use_container_width=True):
+        st.session_state.active_tab = "Output"
+        st.rerun()
+
 
 default_script = """workspace.start
 
@@ -91,7 +105,7 @@ store.function InitPlayer(Name)
     }
 end
 
-# 2. Call Function & Add Bonus Loop
+# 2. Call Function
 InitPlayer(Name)
 block[1]
 
@@ -108,98 +122,108 @@ block[3]
 
 workspace.end"""
 
-# Streamlit Ace (The Editor)
-user_code = st_ace(
-    value=default_script,
-    language="ruby", 
-    theme="tomorrow_night_eighties",
-    keybinding="vscode",
-    font_size=14,
-    tab_size=4,
-    show_gutter=True,
-    wrap=True,
-    auto_update=True,
-    min_lines=22,
-    key="teller_editor"
-)
+# ----------------------------------------
+# TAB 1: CODE EDITOR
+# ----------------------------------------
+if st.session_state.active_tab == "Code":
+    # File Tab Header
+    st.markdown("""
+    <div class="file-tab-container">
+        <div style="display:flex; align-items:center;">
+            <span class="file-tt-icon">TT</span> main.tt
+        </div>
+        <span class="file-add-btn">+</span>
+    </div>
+    """, unsafe_allow_html=True)
 
-# Terminal / Controls Section
-st.markdown("""
-        <div class="terminal-container">
-            <div class="terminal-header">
-                <div class="terminal-tab">TERMINAL</div>
-            </div>
-""", unsafe_allow_html=True)
+    # Clean st_ace component (Not wrapped in custom HTML so you can type perfectly)
+    user_code = st_ace(
+        value=default_script,
+        language="ruby", 
+        theme="tomorrow_night_eighties",
+        keybinding="vscode",
+        font_size=14,
+        tab_size=4,
+        show_gutter=True, # Enables line numbers natively
+        wrap=True,
+        auto_update=True,
+        min_lines=18,
+        key="teller_editor"
+    )
 
-col1, col2 = st.columns([1, 8])
-with col1:
-    st.markdown("<div style='padding-left:15px; padding-top:10px;'>", unsafe_allow_html=True)
-    run_btn = st.button("▶ Run Code", type="primary", use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-with col2:
-    st.markdown("<div style='padding-right:15px; padding-top:10px;'>", unsafe_allow_html=True)
-    user_stdin = st.text_input("Stdin", value="", label_visibility="collapsed", placeholder="Terminal Input (if required by input.console)...")
-    st.markdown("</div>", unsafe_allow_html=True)
+    # Console Input & Run Button
+    col_run, col_in = st.columns([2, 5])
+    with col_run:
+        run_btn = st.button("▶ Run Code", type="primary", use_container_width=True)
+    with col_in:
+        user_stdin = st.text_input("Console Input", value="", label_visibility="collapsed", placeholder="Type terminal input here if script asks for it...")
 
-# Execution Logic
-if run_btn:
-    temp_dir = tempfile.mkdtemp()
-    temp_source_path = os.path.join(temp_dir, "main.tt")
+    if run_btn:
+        temp_dir = tempfile.mkdtemp()
+        temp_source_path = os.path.join(temp_dir, "main.tt")
+        
+        with open(temp_source_path, "w", encoding="utf-8") as f:
+            f.write(user_code)
+
+        try:
+            proc = subprocess.run(
+                ["python", "teller.py", temp_source_path],
+                input=user_stdin,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+
+            raw_stdout = proc.stdout.replace(temp_source_path, "main.tt")
+            raw_stderr = proc.stderr.replace(temp_source_path, "main.tt")
+
+            st.session_state.has_run = True
+            if proc.returncode != 0 or raw_stderr:
+                st.session_state.is_error = True
+                st.session_state.terminal_out = raw_stderr if raw_stderr else raw_stdout
+            else:
+                st.session_state.is_error = False
+                st.session_state.terminal_out = raw_stdout if raw_stdout else "[Program executed successfully]"
+            
+            # Switch to Output tab automatically
+            st.session_state.active_tab = "Output"
+            st.rerun()
+
+        except subprocess.TimeoutExpired:
+            st.session_state.has_run = True
+            st.session_state.is_error = True
+            st.session_state.terminal_out = "FatalError: Execution timed out."
+            st.session_state.active_tab = "Output"
+            st.rerun()
+        finally:
+            if os.path.exists(temp_source_path): os.remove(temp_source_path)
+            if os.path.exists(temp_dir): os.rmdir(temp_dir)
+
+# ----------------------------------------
+# TAB 2: OUTPUT SCREEN
+# ----------------------------------------
+elif st.session_state.active_tab == "Output":
     
-    with open(temp_source_path, "w", encoding="utf-8") as f:
-        f.write(user_code)
+    # If the user hasn't clicked run yet, show the placeholder Live Console screen
+    if not st.session_state.has_run:
+        st.markdown("""
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; color: #8b949e; background-color: #06090e; border: 1px solid #30363d; border-radius: 6px;">
+            <div style="font-size: 56px; margin-bottom: 10px; font-family: monospace; font-weight: bold; color: #586069;">>_</div>
+            <h3 style="margin: 0; color: #c9d1d9; font-weight: 500;">Live Console</h3>
+            <p style="margin: 8px 0 0 0; font-size: 14px;">Click Run to start</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Show actual output
+        color_class = "stderr-text" if st.session_state.is_error else "stdout-text"
+        st.markdown(f"""
+        <div class="terminal-section {color_class}">
+{st.session_state.terminal_out}
+        </div>
+        """, unsafe_allow_html=True)
 
-    try:
-        proc = subprocess.run(
-            ["python", "teller.py", temp_source_path],
-            input=user_stdin,
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-
-        raw_stdout = proc.stdout.replace(temp_source_path, "main.tt")
-        raw_stderr = proc.stderr.replace(temp_source_path, "main.tt")
-
-        if proc.returncode != 0 or raw_stderr:
-            err = raw_stderr if raw_stderr else raw_stdout
-            st.markdown(f'<div class="terminal-output stderr-text">{err}</div>', unsafe_allow_html=True)
-        else:
-            out = raw_stdout if raw_stdout else "[Execution finished with no output]"
-            st.markdown(f'<div class="terminal-output stdout-text">{out}</div>', unsafe_allow_html=True)
-
-    except subprocess.TimeoutExpired:
-        st.markdown('<div class="terminal-output stderr-text">FatalError: Execution timed out.</div>', unsafe_allow_html=True)
-    finally:
-        if os.path.exists(temp_source_path): os.remove(temp_source_path)
-        if os.path.exists(temp_dir): os.rmdir(temp_dir)
-else:
-    st.markdown('<div class="terminal-output">user@teller-studio:~/project$ Waiting for execution...</div>', unsafe_allow_html=True)
-
-# Close Editor Area, Layout, and add Status Bar
-st.markdown("""
-        </div> <!-- End Terminal -->
-    </div> <!-- End Editor Area -->
-</div> <!-- End VS Code Layout -->
-
-<!-- Blue Status Bar (Fixed to bottom like VS Code) -->
-<div class="status-bar">
-    <div style="display:flex; gap:15px;">
-        <div class="status-item">⚡ Teller Compiler Active</div>
-        <div class="status-item">✖ 0  ⚠ 0</div>
-    </div>
-    <div style="display:flex; gap:15px;">
-        <div class="status-item">Ln 1, Col 1</div>
-        <div class="status-item">Spaces: 4</div>
-        <div class="status-item">UTF-8</div>
-        <div class="status-item">Teller (.tt)</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# Hidden Guidebook (To keep it accessible without breaking the layout)
-with st.sidebar:
-    st.markdown("### 📖 Teller Guidebook")
+# Hidden Guidebook included at the bottom for reference
+with st.expander("📖 Teller Language Guidebook & Grammar", expanded=False):
     st.markdown("""
     **Variables:** `store.var { var("name") = value }`  
     **Input:** `input.console("...") { number.val = [var_name] }`  
