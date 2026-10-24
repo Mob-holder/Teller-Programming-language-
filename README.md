@@ -10,6 +10,7 @@ Our Compiler - `https://teller-code-workshop.lovable.app`
 - **Linking or connecting words outside of print:** use `:` instead of `and` or to link words. Think this word as `and`.
 - **Memory block indexing:** If you do every steps. like at first step you made the variables and stored there info. then after this you'll have to type block[1] or block[2] according to the count of the blocks or the steps. 
 - **Strict parameters and parentheses:** Use (*) when the word is required to be filled.
+- **The `{` Editing Scope Rule:** When you want to modify, configure, or edit any declared object, UI element, or entity, open curly brackets `{` directly beside it to edit its internal properties (e.g., `title("Game") { ... }`, `Player { hp = 90 }`, or `text.print("Hit!") { load.color(#ff0000) }`).
 - **Colors & Hex Rules:** Color names use quotes (`"red"`), but raw HEX codes are written directly without quotation marks (e.g., `load.color(#ff4500)` or `bg.color(#1a1a1a)`). In compiler previews, this generates an inline preview swatch box.
 
 # Teller Rules and Cheat Sheet
@@ -18,7 +19,7 @@ Our Compiler - `https://teller-code-workshop.lovable.app`
 workspace.start  =  Turns the code ON (must be on line 1)
 workspace.end    =  Turns the code OFF (goes at the very end)
 
-# 2. HOW TO SAVE INFORMATION
+# 2. HOW TO SAVE & EDIT INFORMATION
 store.var        =  Opens your memory box
 var("coins")     =  Saves a number (like: var("coins") = 50)
 var("name")      =  Saves a word (like: var("name") = "Ghost")
@@ -37,7 +38,57 @@ gear.equip(Player) {
     slot("weapon") = "Flame Blade" : dmg(+25)
 }
 
-# 3. SPECIAL TELLER SYMBOLS
+# 3. 2D MOVEMENT, COORDINATES & CONTROLS
+Set.cord(22x, 11y)      = Sets exact 2D position on the screen
+move("right", 12 mps)   = Moves an entity in a direction with speed (mps)
+pos.x and pos.y         = Read or alter coordinate properties (e.g., Player.pos.x += 5)
+
+on.key("ArrowRight") {
+    Player : move("right", 12 mps)
+}
+
+on.key("Space") {
+    goto("PlayerAttack")
+}
+
+draw.unit("hero.png") {
+    width(32px)
+    height(32px)
+    Set.cord(22x, 11y)
+}
+
+collides(Player, Enemy) = Detects hit collision between two entities or units
+lock.boundary("screen") = Locks unit/player from walking outside window edges
+
+# 4. 2D ENGINE LOOPS, AUDIO & EFFECTS
+loop.frame(60fps) {
+    # Runs 60 times per second for smooth 2D movement and real-time updates
+}
+
+tick.rate(100ms) {
+    # Periodic timer for poison damage or status effects
+}
+
+loud.audio("dungeon_theme.mp3") = Plays background music loop
+sfx.play("slash.wav")           = Plays instant sound effect
+bgm.stop()                      = Stops background audio
+bgm.volume(50%)                 = Adjusts music volume
+
+fx.shake(screen, 5px, 200ms)    = Shakes the screen on impact
+fx.part("sparks") {             = Generates visual burst particles
+    count(20)
+    load.color(#ffaa00)
+}
+
+bar.progress("HealthBar") {     = Visual GUI meter on screen
+    val = Player.hp
+    max = 100
+    fill.color(#22c55e)
+    bg.color(#333333)
+    width(150px)
+}
+
+# 5. SPECIAL TELLER SYMBOLS
 :                =  Means "AND THEN". Chains 2 actions together on one line.
                     Example with numbers: load(coins) : add(20)
                     Example with variables: load(boss_hp) : sub(damage)
@@ -59,7 +110,7 @@ block[2]         =  Marks Step 2 as finished in memory.
 
 ## ... ##        =  Multi-line comment block (ignored by compiler)
 
-# 4. MAKING CHOICES
+# 6. MAKING CHOICES
 if ... then      =  Runs only if the condition is true.
 or if ... then   =  Runs if the first check failed.
 else then        =  Default fallback when none of the conditions above matched.
@@ -73,7 +124,7 @@ Logic Gates:
 if ready("MegaHeal") then   = Checks if skill cooldown has finished
 set.cooldown("MegaHeal", 2) = Sets cooldown for 2 turns
 
-# 5. WEB & UI VISUAL DESIGN (HTML/CSS STYLE)
+# 7. WEB & UI VISUAL DESIGN (HTML/CSS STYLE)
 Teller natively renders graphical layout elements directly inside Web and IDE runtimes:
 
 title("Hello, World!") {
@@ -105,7 +156,7 @@ button.click("AttackBtn") {
     on.click : goto("CombatStep")
 }
 
-# 6. SHOWING TEXT & DIALOGUE ON SCREEN
+# 8. SHOWING TEXT & DIALOGUE ON SCREEN
 system.console() =  Turns on the screen output.
 system.clear()   =  Clears the console screen completely.
 system.divider("=") = Draws a dividing line across the screen.
@@ -123,13 +174,12 @@ npc("Old Hermit").say {
     "Take this lantern if you wish to see."
 }
 
-# 7. TITLES, ACTS, AUDIO & QUESTS
+# 9. TITLES, ACTS & QUESTS
 sec.title[1] = ("Chapter 1: The Descent") = Sets indexed chapter / act titles
 load(Quest) : set("Slay the Crypt Lurker", gold: 50) = Sets active quest & reward
 area("Forgotten Catacombs") : style("dark") = Sets active area tag and mood style
-loud.audio("dungeon_theme.mp3") = Plays background audio / music loop
 
-# 8. LOOPING & LEVELING
+# 10. LOOPING & LEVELING
 do text.print("Hello, World!") [1,3] = Will print the text 3 times in the output 
 
 repeat.until boss_hp <= 0 {
@@ -143,7 +193,7 @@ on.levelup(Player) {
     str += 2
 }
 
-# 9. FUNCTIONS
+# 11. FUNCTIONS
 Functions are like a magical spell.
 store.function Player(Health, Age)
 store.var {
@@ -158,7 +208,7 @@ end
   block[2]
          workspace.end
 
-# 10. INPUT TEXTS
+# 12. INPUT TEXTS
 To make any user able to answer the questions in the output console, we use `input.console`
 input.console("Enter your age") 
 
@@ -181,7 +231,7 @@ input.console("Enter your name:") {
     text.val = [player_name]
 }
 
-# 11. ENTITIES & GAME MECHANICS
+# 13. ENTITIES & GAME MECHANICS
 create Player {
 hp = 100
 mana = 50
@@ -254,22 +304,12 @@ SYMBOLS
   `!`   (NOT)             Inverts check
                         Example: if !Role == "Banned" then
 
-# 3. UI, CSS & MEASUREMENT UNITS
+# 3. 2D Measurements & Styling
 
-  `px`  (Pixels)          Pixel unit for screen measurements
-                        Example: width(200px)
-
-  `#`   (Hex Color)       Raw Hex values with no quotes show a preview swatch
-                        Example: load.color(#00e5ff)
-
-  `bg.color`            Sets background panel fill
-                        Example: bg.color(#181824)
-
-  `border`              Sets outline thickness and color
-                        Example: border(2px, #4a4e69)
-
-  `padding`             Sets internal box spacing
-                        Example: padding(8px)
+  `px`  (Pixels)          Screen pixel units (e.g., width(200px))
+  `mps` (Movement Speed)  Movement pace unit (e.g., move("right", 12 mps))
+  `x, y` (Coordinates)    Positional values (e.g., Set.cord(22x, 11y))
+  `#`   (Hex Color)       Raw Hex values without quotes (e.g., load.color(#00e5ff))
 
 # 4. TELLER GRAMMAR SYMBOLS
 
@@ -300,70 +340,69 @@ SYMBOLS
   `[]`  (Memory Slot)     Labels memory step checkpoints or array index
                         Example: block[1] or __Weapons[1]__
 
-  `{}`  (Room / Scope)    Boxes grouped code together
-                        Example: store.var { ... }
+  `{}`  (Edit / Scope)    Opens property editor or grouped scope
+                        Example: Player { hp = 90 } or store.var { ... }
 --------------------------------------------------
-SAMPLE WORKING SCRIPT:
+SAMPLE 2D WORKING SCRIPT:
 --------------------------------------------------
 
 workspace.start
 
-    title("Hero Dashboard") {
-        load.color(#00f0ff)
-        width(400px)
-        height(45px)
+    title("Dungeon Arena 2D") {
+        load.color(#00e5ff)
+        width(500px)
+        height(40px)
         align("center")
     }
 
     create Player {
         hp = 100
-        gold = 45
-        equipped = "Rune Blade"
+        gold = 25
     }
 
-    array.store {
-        base("Weapons") = ["Rune Blade", "Recurve Bow"]
+    create Slime {
+        hp = 40
+        name = "Acid Slime"
     }
 
-    gear.equip(Player) {
-        slot("body") = "Iron Cuirass" : def(+12)
-        slot("weapon") = "Rune Blade" : dmg(+18)
-    }
+    lock.boundary("screen")
+    loud.audio("dungeon_theme.mp3")
     block[1]
 
-    # Render Visual Web Card for Character
-    box.view("PlayerProfile") {
-        width(320px)
-        height(200px)
-        bg.color(#1a1a2e)
-        border(2px, #e94560)
-        padding(16px)
+    # Draw player sprite and set initial coordinates
+    draw.unit("hero.png") {
+        width(32px)
+        height(32px)
+        Set.cord(22x, 11y)
+    }
 
-        text.view("NameTitle") {
-            content("PLAYER STATUS")
-            load.color(#ffffff)
-            font.size(18px)
-        }
-
-        text.view("HpBadge") {
-            content("Current HP: "__Player.hp__"")
-            load.color(#00ff88)
-        }
-
-        button.click("EquipAction") {
-            label("Swing Rune Blade")
-            bg.color(#e94560)
-            width(160px)
-            height(35px)
-            on.click : goto("CombatEncounter")
-        }
+    draw.unit("slime.png") {
+        width(32px)
+        height(32px)
+        Set.cord(80x, 11y)
     }
     block[2]
 
-    # Handle Terminal Console Storyline
-    system.console()
-    output(text.string) {
-        text.print("Profile initialized. Weapon slot 1: "__Weapons[1]__"")
+    # Real-time Movement Controls
+    on.key("ArrowRight") {
+        Player : move("right", 12 mps)
+        if collides(Player, Slime) then
+            sfx.play("bump.wav")
+            fx.shake(screen, 5px, 200ms)
+            fx.part("sparks") {
+                count(15)
+                load.color(#ff4400)
+            }
+        end
+    }
+
+    # Render Visual HUD
+    bar.progress("PlayerHP") {
+        val = Player.hp
+        max = 100
+        fill.color(#22c55e)
+        bg.color(#181824)
+        width(140px)
     }
     block[3]
 
