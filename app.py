@@ -7,7 +7,7 @@ from streamlit_ace import st_ace
 
 st.set_page_config(page_title="Teller", page_icon="⚡", layout="wide", initial_sidebar_state="collapsed")
 
-# Initialize Session State
+# Initialize Session State for Tabs and Output
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = "Code"
 if "has_run" not in st.session_state:
@@ -20,11 +20,13 @@ if "is_error" not in st.session_state:
 # Clean Global CSS
 st.markdown("""
 <style>
+    /* Dark Theme Base */
     .main { background-color: #0e1117; color: #c9d1d9; }
     [data-testid="stHeader"] { display: none; }
     footer { display: none !important; }
     .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; max-width: 1000px !important; }
     
+    /* Segmented Control Buttons (Sticking Code & Output together) */
     div[data-testid="column"]:nth-child(1) { padding-right: 0 !important; }
     div[data-testid="column"]:nth-child(2) { padding-left: 0 !important; }
     div[data-testid="column"]:nth-child(1) button { 
@@ -39,6 +41,7 @@ st.markdown("""
         color: #c9d1d9;
     }
     
+    /* File Tab */
     .file-tab-container {
         display: inline-flex; align-items: center; justify-content: space-between;
         background: #161b22; border-top: 3px solid #cc1414; 
@@ -57,6 +60,7 @@ st.markdown("""
     }
     .file-add-btn:hover { color: #fff; }
     
+    /* Terminal Styles */
     .terminal-section {
         background-color: #06090e; border: 1px solid #30363d; border-radius: 6px;
         padding: 15px 20px; margin-top: 15px; min-height: 350px;
@@ -67,7 +71,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Top Navbar
+# Top Navbar (TT Logo + Title + Segmented Control)
 col_logo, col_btn1, col_btn2, col_space = st.columns([4, 1.5, 1.5, 2])
 
 with col_logo:
@@ -117,6 +121,7 @@ workspace.end"""
 # TAB 1: CODE EDITOR
 # ----------------------------------------
 if st.session_state.active_tab == "Code":
+    # File Tab Header
     st.markdown("""
     <div class="file-tab-container">
         <div style="display:flex; align-items:center;">
@@ -126,10 +131,9 @@ if st.session_state.active_tab == "Code":
     </div>
     """, unsafe_allow_html=True)
 
-    # Changed language to "text" to kill Ruby autocompletes like "chomp"
     user_code = st_ace(
         value=default_script,
-        language="text", 
+        language="ruby", 
         theme="tomorrow_night_eighties",
         keybinding="vscode",
         font_size=14,
@@ -141,6 +145,7 @@ if st.session_state.active_tab == "Code":
         key="teller_editor"
     )
 
+    # Console Input & Run Button
     col_run, col_in = st.columns([2, 5])
     with col_run:
         run_btn = st.button("▶ Run Code", type="primary", use_container_width=True)
@@ -202,17 +207,13 @@ elif st.session_state.active_tab == "Output":
         """, unsafe_allow_html=True)
     else:
         color_class = "stderr-text" if st.session_state.is_error else "stdout-text"
-        # html.escape forces browsers to treat <module> as plain text, preventing layout breaks
         safe_output = html.escape(st.session_state.terminal_out)
         
-        st.markdown(f"""
-        <div class="terminal-section {color_class}">
-{safe_output}
-        </div>
-        """, unsafe_allow_html=True)
+        # Wrapped in a single-line string with a strict <pre> tag to block Markdown interference
+        st.markdown(f'<div class="terminal-section {color_class}"><pre style="margin:0; font-family:inherit; color:inherit; background:transparent; border:none; padding:0; white-space:pre-wrap; font-size:inherit;">{safe_output}</pre></div>', unsafe_allow_html=True)
 
 # ----------------------------------------
-# GUIDEBOOK
+# COMPLETE IMPROVED GUIDEBOOK
 # ----------------------------------------
 with st.expander("📖 Teller Language Guidebook & Grammar", expanded=False):
     st.markdown("""
