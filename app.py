@@ -281,7 +281,7 @@ Player(Health)
 block[2]
 
 workspace.end
-
+""")
 ### 8. INPUT TEXTS
 To make any user able to answer the questions in the output console, we use input.console.
 input.console("Enter your age")
@@ -345,4 +345,3 @@ workspace.start
 
 workspace.end
 Still in BETA. More features coming soon!
-""")
