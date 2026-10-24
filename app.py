@@ -342,3 +342,5 @@ workspace.start
     block[3]
 
 workspace.end
+Still in BETA! More features coming soon!
+""")
