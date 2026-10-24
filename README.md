@@ -44,6 +44,41 @@ system.console() =  Turns on the screen output.
 output(text.string)     =  Sends your text to be printed.
 text.print(...)  =  The actual words you want to show.
 
+# 6. LOOPING 
+do text.print("Hello, World!") [1,3] = Will print the text 3 times in the output 
+
+# 7. FUNCTIONS
+Functions are like a magical spell.
+store.function Player(Health, Age)
+store.var {
+var.("Health") = 100
+var.("Age") = 18
+}
+end
+  block[1]
+Player(Health) 
+end
+  block[2]
+         workspace.end
+
+# 8. INPUT TEXTS
+To make any user able to answer the questions in the output console, we use `input.console`
+input.console("Enter your age") 
+
+Now to make the number a actual mathematical value we use `number.val`
+input.console("Enter your age") # Example - I answered with 17 then
+input.console("7") {
+number.val [7]
+}
+
+The system gave me a interactive question asking for my name. So I entered 17, so now Teller don't know the is it a mathematical value? so if we just type 7+10 then It'll print 710 only. so by typing number.val we'll now able to add 7 with 10 with the result being "17".
+Example -
+
+input.console("17") {
+number.val [17] : 17+3
+text.print("You'll turn" __input.console__ "next year!")
+}
+
 --------------------------------------------------
 SYMBOLS 
 --------------------------------------------------
