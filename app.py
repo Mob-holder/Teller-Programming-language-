@@ -133,7 +133,7 @@ if st.session_state.active_tab == "Code":
 
     user_code = st_ace(
         value=default_script,
-        language="ruby", 
+        language="text", 
         theme="tomorrow_night_eighties",
         keybinding="vscode",
         font_size=14,
@@ -268,6 +268,7 @@ Our Compiler - [https://y4n85txldtzxkojiy5zexb.streamlit.app/](https://y4n85txld
 
 ### 7. FUNCTIONS
 Functions are like a magical spell.
+
 ```teller
 store.function Player(Health, Age)
     store.var {
@@ -281,13 +282,19 @@ Player(Health)
 block[2]
 
 workspace.end
-""")
-### 8. INPUT TEXTS
-To make any user able to answer the questions in the output console, we use input.console.
-input.console("Enter your age")
-Now, to make the number an actual mathematical value, we use number.val. For example, if the system gives an interactive question asking for your age and you enter 17, Teller wouldn't initially know if it is a mathematical value. If we just type 17+10, it'll print 1710 only. By typing number.val, we are able to add 17 with 10 with the result being 27.
-Example:
+```
 
+### 8. INPUT TEXTS
+To make any user able to answer the questions in the output console, we use `input.console`.
+
+```teller
+input.console("Enter your age")
+```
+
+Now, to make the number an actual mathematical value, we use `number.val`. For example, if the system gives an interactive question asking for your age and you enter 17, Teller wouldn't initially know if it is a mathematical value. If we just type 17+10, it'll print 1710 only. By typing `number.val`, we are able to add 17 with 10 with the result being 27.
+
+**Example:**
+```teller
 input.console("Enter your age:") {
     number.val = [age] 
 }
@@ -296,33 +303,43 @@ system.console()
 output(text.string) {
     text.print("You'll turn "__age__" in 3 years!")
 }
+```
 
-SYMBOLS
-### 1. Calculation Symbols
-+ (Plus) = Adds numbers together. Example: 10 + 5 (equals 15)
-- (Minus) = Takes away numbers. Example: 10 - 5 (equals 5)
-* (Multiply) = Multiplies numbers (Times). Example: 5 * 2 (equals 10)
-/ (Divide) = Divides numbers into parts. Example: 10 / 2 (equals 5)
-= (Set / Equals) = Saves a value into a variable. Example: var("Coins") = 50
+---
+
+## SYMBOLS 
+
+### 1. Calculation Symbols 
+- `+` (Plus) = Adds numbers together. *Example:* `10 + 5` (equals 15)
+- `-` (Minus) = Takes away numbers. *Example:* `10 - 5` (equals 5)
+- `*` (Multiply) = Multiplies numbers (Times). *Example:* `5 * 2` (equals 10)
+- `/` (Divide) = Divides numbers into parts. *Example:* `10 / 2` (equals 5)
+- `=` (Set / Equals) = Saves a value into a variable. *Example:* `var("Coins") = 50`
+
 ### 2. Comparison Symbols
-> (Greater Than) = Left side is bigger than right. Example: if Level > 10 then
-< (Less Than) = Left side is smaller than right. Example: if Level < 5 then
->= (Greater / Equal) = Bigger than or exact match. Example: if Coins >= 100 then
-<= (Less / Equal) = Smaller than or exact match. Example: if Health <= 0 then
-== (Exact Match) = Checks if both sides are strictly identical. Example: if Name == "Ghost" then
-~= (Not Equal) = Checks if both sides are different. Example: if Rank ~= "Admin" then
-### 3. TELLER GRAMMAR SYMBOLS
-: (Link / And) = Chains two actions on one line. Example: load(Coins) : add(25)
-(*) (Mandatory) = Field must be filled; cannot be blank. Example: string1(*)
-__ (Double Under) = Wraps a saved variable to display in text. Example: text.print("Level: "__Level__"!")
-# (Comment) = Notes for human eyes; the computer ignores it. Example: # This adds gold reward
-. (Dot Accessor) = Opens a tool inside a system. Example: system.console() or workspace.start
-"" (Speech Marks) = Wraps plain words/text so it is not read as math. Example: "Hello player"
-() (Pouch) = Holds target names or inputs. Example: load(Coins)
-[] (Memory Slot) = Labels memory step checkpoints. Example: block[1]
-{} (Room / Scope) = Boxes grouped code together. Example: store.var { ... }
+- `>` (Greater Than) = Left side is bigger than right. *Example:* `if Level > 10 then`
+- `<` (Less Than) = Left side is smaller than right. *Example:* `if Level < 5 then`
+- `>=` (Greater / Equal) = Bigger than or exact match. *Example:* `if Coins >= 100 then`
+- `<=` (Less / Equal) = Smaller than or exact match. *Example:* `if Health <= 0 then`
+- `==` (Exact Match) = Checks if both sides are strictly identical. *Example:* `if Name == "Ghost" then`
+- `~=` (Not Equal) = Checks if both sides are different. *Example:* `if Rank ~= "Admin" then`
 
-# Sample working script -
+### 3. TELLER GRAMMAR SYMBOLS
+- `:` (Link / And) = Chains two actions on one line. *Example:* `load(Coins) : add(25)`
+- `(*)` (Mandatory) = Field must be filled; cannot be blank. *Example:* `string1(*)`
+- `__` (Double Under) = Wraps a saved variable to display in text. *Example:* `text.print("Level: "__Level__"!")`
+- `#` (Comment) = Notes for human eyes; the computer ignores it. *Example:* `# This adds gold reward`
+- `.` (Dot Accessor) = Opens a tool inside a system. *Example:* `system.console()` or `workspace.start`
+- `""` (Speech Marks) = Wraps plain words/text so it is not read as math. *Example:* `"Hello player"`
+- `()` (Pouch) = Holds target names or inputs. *Example:* `load(Coins)`
+- `[]` (Memory Slot) = Labels memory step checkpoints. *Example:* `block[1]`
+- `{}` (Room / Scope) = Boxes grouped code together. *Example:* `store.var { ... }`
+
+---
+
+## SAMPLE WORKING SCRIPT:
+
+```teller
 workspace.start
 
     # Step 1: Save data
@@ -344,4 +361,7 @@ workspace.start
     block[3]
 
 workspace.end
-Still in BETA. More features coming soon!
+```
+
+*Still in BETA version, more features coming soon!*
+    """)
