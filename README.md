@@ -19,7 +19,7 @@ workspace.end    =  Turns the code OFF (goes at the very end)
 # 2. HOW TO SAVE INFORMATION
 store.var        =  Opens your memory box
 var("coins")     =  Saves a number (like: var("coins") = 50)
-var("name")      =  Saves a word (like: var("name") = "Ghost")
+var("name")     =  Saves a word (like: var("name") = "Ghost")
 
 # 3. SPECIAL TELLER SYMBOLS
 :                =  Means "AND THEN". Chains 2 actions together on one line.
