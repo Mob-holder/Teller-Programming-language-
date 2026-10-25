@@ -2,7 +2,7 @@
 
 Teller File extension - `.tt`
 example - `main.tt`
-Our Compiler - `t-teller.netlify.app`
+Our Compiler - `https://ai.studio/apps/45000a99-868a-4690-b71e-350095799ce8?fullscreenApplet=true`
 
 # Grammars
  - **Start and End:** Always type `workspace.start` at the beginning and end it with `workspace.end`. 
